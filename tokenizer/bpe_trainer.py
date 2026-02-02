@@ -11,7 +11,7 @@ def find_max_bp(pretokenized_count):
         for i in range(len(bytes_tuple) - 1):
             bp = (bytes_tuple[i], bytes_tuple[i+1])
             bp_counter[bp] = bp_counter.get(bp, 0) + count
-    max_bp, max_count = (0, 0), 0
+    max_bp, max_count = (b'', b''), 0
     for bp, bp_count in bp_counter.items():
         # print(max_bp, max_count, bp)
         if bp_count > max_count:
