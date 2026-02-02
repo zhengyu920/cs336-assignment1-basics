@@ -63,6 +63,10 @@ def decode(tokens: tuple) -> str:
     return result
 
 
+def pretokenizer() -> dict[list[bytes], int]:
+    return {}
+
+
 def train(file: str):
     global next_id
     global num_iter

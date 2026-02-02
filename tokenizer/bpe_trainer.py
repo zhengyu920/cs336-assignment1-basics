@@ -47,9 +47,34 @@ def merge_bp(pretoken: dict, bp_merge: tuple):
     return new_pretoken
 
 
+def remove_special_tokens(content: str, special_tokens: list[str]) -> list[str]:
+    pattern = '|'.join(re.escape(d) for d in special_tokens)
+    return re.split(pattern, content)
+
+
+PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+
+
+def pretokenizer(content: str, special_tokens: list[str]) -> dict[list[bytes], int]:
+    docs = remove_special_tokens(content, special_tokens)
+    counter = {}
+    for doc in docs:
+        matches = re.finditer(PAT, doc)
+
+        for match in matches:
+            text = match.group()
+            counter[text] = counter.get(text, 0) + 1
+    return counter
+
+
 def train_bpe(
         input_path: str | os.PathLike,
         vocab_size: int,
         special_tokens: list[str]
 ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
+    path = Path(input_path)
+    content = ''
+    with path.open('+r') as f:
+        content = f.read()
+    pretokenized_count = pretokenizer(content)
     return {}, []
