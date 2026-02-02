@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import regex as re
 from byte_utils import concat_merge
+from byte_utils import to_bytes_tuple
 
 def find_max_bp(pretokenized_count):
     # Count byte pairs
@@ -87,7 +88,7 @@ def train_bpe(
         if max_count > 1:
             vocab_size = len(vocab)
             vocab[vocab_size] = concat_merge(max_bp)
-            merges.append(max_bp)
+            merges.append(to_bytes_tuple(max_bp))
             pretokenized_count = merge_bp(pretokenized_count, max_bp)
         else:
             break
