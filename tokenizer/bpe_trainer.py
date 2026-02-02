@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import regex as re
-
+from byte_utils import concat_merge
 
 def find_max_bp(pretokenized_count):
     # Count byte pairs
@@ -19,12 +19,6 @@ def find_max_bp(pretokenized_count):
             max_bp = bp
             max_count = bp_count
     return max_bp, max_count
-
-
-def concat_merge(merge):
-    part1 = bytes([merge[0]]) if isinstance(merge[0], int) else merge[0]
-    part2 = bytes([merge[1]]) if isinstance(merge[1], int) else merge[1]
-    return part1 + part2
 
 
 def merge_bp(pretokenized_count: dict[tuple[bytes], int], merge):
