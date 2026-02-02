@@ -13,6 +13,7 @@ def find_max_bp(pretokenized_count):
             bp_counter[bp] = bp_counter.get(bp, 0) + count
     max_bp, max_count = (0, 0), 0
     for bp, bp_count in bp_counter.items():
+        # print(max_bp, max_count, bp)
         if bp_count > max_count:
             max_bp = bp
             max_count = bp_count
@@ -54,7 +55,7 @@ def pretokenizer(content: str, special_tokens: list[str]) -> dict[tuple[bytes], 
         matches = re.finditer(PAT, doc)
 
         for match in matches:
-            text = tuple(match.group().encode('utf8'))
+            text = tuple(bytes([b]) for b in match.group().encode('utf8'))
             counter[text] = counter.get(text, 0) + 1
     return counter
 
@@ -82,12 +83,12 @@ def train_bpe(
     with path.open('+r') as f:
         content = f.read()
     pretokenized_count = pretokenizer(content, special_tokens)
-    for _ in range(6):
+    while len(vocab) < vocab_size:
         max_bp, max_count = find_max_bp(pretokenized_count)
         # only merge and update when max_count > 1.
         if max_count > 1:
-            vocab_size = len(vocab)
-            vocab[vocab_size] = concat_merge(max_bp)
+            cur_size = len(vocab)
+            vocab[cur_size] = concat_merge(max_bp)
             merges.append(to_bytes_tuple(max_bp))
             pretokenized_count = merge_bp(pretokenized_count, max_bp)
         else:
@@ -96,10 +97,10 @@ def train_bpe(
 
 
 if __name__ == "__main__":
-    # input_path = './data/TinyStoriesV2-GPT4-valid.txt'
-    input_path = './tokenizer/bpe_example.txt'
+    input_path = './data/TinyStoriesV2-GPT4-valid.txt'
+    # input_path = './tokenizer/bpe_example.txt'
     special_tokens = ['<|endoftext|>']
-    vocab_size = 1000
+    vocab_size = 10000
     vocab, merges = train_bpe(input_path, vocab_size, special_tokens)
     print(vocab)
     print(merges)
