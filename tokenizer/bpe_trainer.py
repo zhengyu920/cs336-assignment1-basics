@@ -93,12 +93,21 @@ def train_bpe(
             break
     return vocab, merges
 
+import pickle
 
 if __name__ == "__main__":
-    input_path = './data/TinyStoriesV2-GPT4-valid.txt'
-    # input_path = './tokenizer/bpe_example.txt'
+    # input_path = './data/TinyStoriesV2-GPT4-valid.txt'
+    # input_path = './data/TinyStoriesV2-GPT4-train.txt'
+    input_path = './tokenizer/bpe_example.txt'
     special_tokens = ['<|endoftext|>']
     vocab_size = 10000
     vocab, merges = train_bpe(input_path, vocab_size, special_tokens)
-    print(vocab)
-    print(merges)
+
+    with open("./output/vocab.pkl", "wb") as f:
+        pickle.dump(vocab, f)
+
+    with open('./output/merges.pkl', 'wb') as f:
+        pickle.dump(merges, f)
+
+    # print(vocab)
+    # print(merges)

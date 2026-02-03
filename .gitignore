@@ -165,4 +165,6 @@ cython_debug/
 # Data folder
 data/
 
-scalene-profile.*
+*.scalene-profile.*
+
+output/
