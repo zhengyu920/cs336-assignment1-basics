@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import regex as re
+from tokenizer.pretokenization import pretokenization
 
 def find_max_bp(pretokenized_count):
     # Count byte pairs
@@ -37,27 +37,6 @@ def merge_bp(pretokenized_count: dict[tuple[bytes], int], merge):
         new_pretokenized_count[tuple(new_pt)] = count
     return new_pretokenized_count
 
-
-def remove_special_tokens(content: str, special_tokens: list[str]) -> list[str]:
-    pattern = '|'.join(re.escape(d) for d in special_tokens)
-    return re.split(pattern, content)
-
-
-PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
-
-
-def pretokenizer(content: str, special_tokens: list[str]) -> dict[tuple[bytes], int]:
-    docs = remove_special_tokens(content, special_tokens)
-    counter = {}
-    for doc in docs:
-        matches = re.finditer(PAT, doc)
-
-        for match in matches:
-            text = tuple(bytes([b]) for b in match.group().encode('utf8'))
-            counter[text] = counter.get(text, 0) + 1
-    return counter
-
-
 def init_vocab(special_tokens: list[str]) -> dict[int, bytes]:
     vocab = {}
     for i in range(256):
@@ -76,11 +55,8 @@ def train_bpe(
     vocab = init_vocab(special_tokens)
     merges = []
 
-    path = Path(input_path)
-    content = ''
-    with path.open('+r') as f:
-        content = f.read()
-    pretokenized_count = pretokenizer(content, special_tokens)
+    pretokenized_count = pretokenization(input_path, special_tokens)
+    #print(f'prtokenization result: {pretokenized_count}')
     while len(vocab) < vocab_size:
         max_bp, max_count = find_max_bp(pretokenized_count)
         # only merge and update when max_count > 1.
