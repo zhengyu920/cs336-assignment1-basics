@@ -70,14 +70,12 @@ def pretokenize_chunk(content: str, special_tokens: list[str], output_counter: T
             counter[text] = counter.get(text, 0) + 1
     output_counter.increment_from_dict(counter)
 
-## Usage
-def pretokenization(input_path: str | os.PathLike, special_tokens: list[str]):
+def process_with_multiprocessing(input_path: str | os.PathLike, special_tokens: list[str], num_processes: int):
     path = Path(input_path)
     with multiprocessing.Manager() as manager:
         counter = ThreadSafeCounter(manager)
         with open(path, "rb") as f:
             processes = []
-            # num_processes = multiprocessing.cpu_count()
             num_processes = 8
             print(f"Running pretokenizatoin with {num_processes} processes...")
             boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
@@ -94,3 +92,7 @@ def pretokenization(input_path: str | os.PathLike, special_tokens: list[str]):
                 p.join()
             print("Pretokenization is done...")
         return counter.to_dict()
+
+## Usage
+def pretokenization(input_path: str | os.PathLike, special_tokens: list[str], num_processes: int = 8):
+    return process_with_multiprocessing(input_path, special_tokens, num_processes)
