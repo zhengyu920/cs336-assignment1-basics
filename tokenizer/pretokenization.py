@@ -76,8 +76,6 @@ def process_with_multiprocessing(input_path: str | os.PathLike, special_tokens: 
         counter = ThreadSafeCounter(manager)
         with open(path, "rb") as f:
             processes = []
-            num_processes = 8
-            print(f"Running pretokenizatoin with {num_processes} processes...")
             boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
             # The following is a serial implementation, but you can parallelize this
             # by sending each start/end pair to a set of processes.
@@ -90,7 +88,6 @@ def process_with_multiprocessing(input_path: str | os.PathLike, special_tokens: 
                 p.start()
             for p in processes:
                 p.join()
-            print("Pretokenization is done...")
         return counter.to_dict()
 
 ## Usage

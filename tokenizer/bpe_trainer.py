@@ -71,7 +71,9 @@ def train_bpe(
     vocab = init_vocab(special_tokens)
     merges = []
     start_time = time.perf_counter()
+    print(f"Running pretokenizatoin with 8 processes...")
     pretokenized_count = pretokenization(input_path, special_tokens)
+    print("Pretokenization is done...")
     end_time = time.perf_counter()
     pretokenization_time = end_time - start_time
     #print(f'prtokenization result: {pretokenized_count}')
