@@ -78,7 +78,7 @@ def pretokenization(input_path: str | os.PathLike, special_tokens: list[str]):
         with open(path, "rb") as f:
             processes = []
             # num_processes = multiprocessing.cpu_count()
-            num_processes = 16
+            num_processes = 8
             print(f"Running pretokenizatoin with {num_processes} processes...")
             boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
             # The following is a serial implementation, but you can parallelize this
@@ -92,4 +92,5 @@ def pretokenization(input_path: str | os.PathLike, special_tokens: list[str]):
                 p.start()
             for p in processes:
                 p.join()
+            print("Pretokenization is done...")
         return counter.to_dict()
