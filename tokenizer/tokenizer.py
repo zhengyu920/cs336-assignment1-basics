@@ -1,10 +1,20 @@
 from pathlib import Path
 import pickle
+import regex as re
+from rich import inspect
+
 class Tokenizer:
+    PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+
     def __init__(self, vocab : dict[int, bytes], merges : list[tuple[bytes, bytes]], special_tokens :  list[str] | None=None):
         self._vocab = vocab
+        self._inverted_vocab = {v: k for k, v in vocab.items()}
         self._merges = merges
         self._special_tokens = special_tokens
+        if special_tokens is None:
+            self._rm_st_pattern = None
+        else:
+            self._rm_st_pattern = '|'.join(re.escape(d) for d in special_tokens) if special_tokens is not None else None
 
     def from_files(cls, vocab_filepath = str, merges_filepath = str, special_tokens : list[str] | None=None):
         vocab_path = Path(vocab_filepath)
@@ -17,7 +27,62 @@ class Tokenizer:
         return Tokenizer(vocab, merges, special_tokens)
     
     def encode(self, text: str) -> list[int]:
-        return []
+        words = self._pretokenization(text)
+        encoded_output = []
+        for w in words:
+            merged_word = self._merge_word(w)
+            for sub_word_bytes in merged_word:
+                encoded_output.append(self._inverted_vocab[sub_word_bytes])
+        return encoded_output
     
     def decode(self, ids: list[int]) -> str:
         return ""
+    
+    def _pretokenization(self, text: str):
+        st_removed_text = self._remove_special_tokens(text)
+        return self._compile_to_bytes_list(st_removed_text)
+    
+    def _remove_special_tokens(self, content: str) -> list[str]:
+        if self._rm_st_pattern is None:
+            return [content]
+        return re.split(self._rm_st_pattern, content)
+    
+    # turn each of the str in text into utf-8 encoded bytes
+    def _compile_to_bytes_list(self, docs: list[str]) -> list[list[bytes]]:
+        bytes_list = []
+        for doc in docs:
+            matches = re.finditer(Tokenizer.PAT, doc)
+            for match in matches:
+                word = list(bytes([b]) for b in match.group().encode('utf8'))
+                bytes_list.append(word)
+        return bytes_list
+    
+    def _merge_word(self, word: list[bytes]) -> list[bytes]:
+        # for each merges, scan the word from left to right and merge them
+        for merge in self._merges:
+            word = self._merge_step(word, merge)
+            if len(word) == 1:
+                return word
+        return word
+    
+    # perform merge for a single merge tuple
+    def _merge_step(self, word: list[bytes], merge: tuple[bytes, bytes]) -> list[bytes]:
+        merged_word = []
+        # inspect(merge[0])
+        # inspect(merge[1])
+        merged = merge[0] + merge[1]
+        i = 0
+        while i < len(word):
+            if i < len(word) - 1 and (word[i], word[i+1]) == merge:
+                merged_word.append(merged)
+                i = i + 2
+            else:
+                merged_word.append(word[i])
+                i = i + 1
+        return merged_word
+
+if __name__ == '__main__':
+    vocab = {0: b' ', 1: b'a', 2:b'c', 3: b'e', 4: b'h', 5: b't', 6: b'th', 7: b' c', 8: b' a', 9: b'the', 10: b' at'}
+    merges = [(b't', b'h'), (b' ', b'c'), (b' ', b'a'), (b'th', b'e'), (b' a', b't')]
+    t = Tokenizer(vocab, merges)
+    print(t.encode('the cat ate'))
