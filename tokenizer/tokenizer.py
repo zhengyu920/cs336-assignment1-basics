@@ -1,10 +1,13 @@
 from pathlib import Path
 import pickle
 import regex as re
+from typing import Iterable
+from typing import Iterator
 from rich import inspect
 
 class Tokenizer:
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    invalid_data = b'\xff'
 
     def __init__(self, vocab : dict[int, bytes], merges : list[tuple[bytes, bytes]], special_tokens :  list[str] | None=None):
         self._vocab = vocab
@@ -35,8 +38,17 @@ class Tokenizer:
                 encoded_output.append(self._inverted_vocab[sub_word_bytes])
         return encoded_output
     
+    def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
+        """Given an iterable of strings (e.g., a Python file handle), return a generator that lazily yields token IDs. This is required for memory-eﬀicient tokenization of large files that we cannot directly load into memory.
+        """
+        for text in iterable:
+            yield self.encode(text)
+
     def decode(self, ids: list[int]) -> str:
-        return ""
+        builder = bytearray()
+        for id in ids:
+            builder.extend(self._vocab.get(id, Tokenizer.invalid_data))
+        return bytes(builder).decode('utf-8')
     
     def _pretokenization(self, text: str):
         st_removed_text = self._remove_special_tokens(text)
@@ -85,4 +97,7 @@ if __name__ == '__main__':
     vocab = {0: b' ', 1: b'a', 2:b'c', 3: b'e', 4: b'h', 5: b't', 6: b'th', 7: b' c', 8: b' a', 9: b'the', 10: b' at'}
     merges = [(b't', b'h'), (b' ', b'c'), (b' ', b'a'), (b'th', b'e'), (b' a', b't')]
     t = Tokenizer(vocab, merges)
-    print(t.encode('the cat ate'))
+    encoded = t.encode('the cat ate')
+    print(encoded)
+    decoded = t.decode(encoded)
+    print(decoded)
