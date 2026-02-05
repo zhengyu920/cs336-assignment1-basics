@@ -71,8 +71,9 @@ def train_bpe(
     vocab = init_vocab(special_tokens)
     merges = []
     start_time = time.perf_counter()
-    print(f"Running pretokenizatoin with 8 processes...")
-    pretokenized_count = pretokenization(input_path, special_tokens)
+    num_processes = 32
+    print(f"Running pretokenizatoin with {num_processes} processes...")
+    pretokenized_count = pretokenization(input_path, special_tokens, num_processes)
     print("Pretokenization is done...")
     end_time = time.perf_counter()
     pretokenization_time = end_time - start_time
@@ -103,7 +104,9 @@ def train_bpe(
 import pickle
 
 if __name__ == "__main__":
-    input_path = './data/TinyStoriesV2-GPT4-valid.txt'
+    input_path = './data/owt_train.txt'
+    # input_path = './data/owt_valid.txt'
+    # input_path = './data/TinyStoriesV2-GPT4-valid.txt'
     # input_path = './data/TinyStoriesV2-GPT4-train.txt'
     # input_path = './tokenizer/bpe_example.txt'
     special_tokens = ['<|endoftext|>']
