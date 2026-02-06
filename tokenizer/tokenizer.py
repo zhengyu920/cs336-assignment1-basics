@@ -3,21 +3,24 @@ import pickle
 import regex as re
 from typing import Iterable
 from typing import Iterator
-from rich import inspect
 
 class Tokenizer:
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     invalid_data = b'\xff'
 
     def __init__(self, vocab : dict[int, bytes], merges : list[tuple[bytes, bytes]], special_tokens :  list[str] | None=None):
-        self._vocab = vocab
-        self._inverted_vocab = {v: k for k, v in vocab.items()}
-        self._merges = merges
-        self._special_tokens = special_tokens
+        self._special_tokens = set(special_tokens)
         if special_tokens is None:
             self._rm_st_pattern = None
         else:
-            self._rm_st_pattern = '|'.join(re.escape(d) for d in special_tokens) if special_tokens is not None else None
+            self._rm_st_pattern = f"({'|'.join(map(re.escape, special_tokens))})"
+
+        self._vocab = vocab
+        if special_tokens is not None:
+            for st in special_tokens:
+                self._vocab[len(self._vocab)] = st.encode('utf-8')
+        self._inverted_vocab = {v: k for k, v in self._vocab.items()}
+        self._merges = merges
 
     def from_files(cls, vocab_filepath = str, merges_filepath = str, special_tokens : list[str] | None=None):
         vocab_path = Path(vocab_filepath)
@@ -33,6 +36,9 @@ class Tokenizer:
         words = self._pretokenization(text)
         encoded_output = []
         for w in words:
+            if isinstance(w, str):
+                encoded_output.append(self._inverted_vocab[w.encode('utf-8')])
+                continue
             merged_word = self._merge_word(w)
             for sub_word_bytes in merged_word:
                 encoded_output.append(self._inverted_vocab[sub_word_bytes])
@@ -51,10 +57,10 @@ class Tokenizer:
         return bytes(builder).decode('utf-8')
     
     def _pretokenization(self, text: str):
-        st_removed_text = self._remove_special_tokens(text)
-        return self._compile_to_bytes_list(st_removed_text)
+        st_processed_text = self._process_special_tokens(text)
+        return self._compile_to_bytes_list(st_processed_text)
     
-    def _remove_special_tokens(self, content: str) -> list[str]:
+    def _process_special_tokens(self, content: str) -> list[str]:
         if self._rm_st_pattern is None:
             return [content]
         return re.split(self._rm_st_pattern, content)
@@ -63,6 +69,9 @@ class Tokenizer:
     def _compile_to_bytes_list(self, docs: list[str]) -> list[list[bytes]]:
         bytes_list = []
         for doc in docs:
+            if doc in self._special_tokens:
+                bytes_list.append(doc)
+                continue
             matches = re.finditer(Tokenizer.PAT, doc)
             for match in matches:
                 word = list(bytes([b]) for b in match.group().encode('utf8'))
@@ -80,8 +89,6 @@ class Tokenizer:
     # perform merge for a single merge tuple
     def _merge_step(self, word: list[bytes], merge: tuple[bytes, bytes]) -> list[bytes]:
         merged_word = []
-        # inspect(merge[0])
-        # inspect(merge[1])
         merged = merge[0] + merge[1]
         i = 0
         while i < len(word):
@@ -96,8 +103,18 @@ class Tokenizer:
 if __name__ == '__main__':
     vocab = {0: b' ', 1: b'a', 2:b'c', 3: b'e', 4: b'h', 5: b't', 6: b'th', 7: b' c', 8: b' a', 9: b'the', 10: b' at'}
     merges = [(b't', b'h'), (b' ', b'c'), (b' ', b'a'), (b'th', b'e'), (b' a', b't')]
-    t = Tokenizer(vocab, merges)
-    encoded = t.encode('the cat ate')
+    st = ['<|endoftext|>']
+    t = Tokenizer(vocab, merges, st)
+    text = 'the cat<|endoftext|><|endoftext|> ate'
+    print(t._process_special_tokens(text))
+    print(t._pretokenization(text))
+    encoded = t.encode(text)
     print(encoded)
     decoded = t.decode(encoded)
     print(decoded)
+
+    # test  = "Héllò hôw <|endoftext|><|endoftext|> are ü? 🙃<|endoftext|>"
+    # print(test.encode('utf-8'))
+    # print(t._pretokenization(test))
+    # print(t.encode(test))
+    # print(t.decode(t.encode(test)))
