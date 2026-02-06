@@ -10,7 +10,10 @@ class Tokenizer:
 
     def __init__(self, vocab : dict[int, bytes], merges : list[tuple[bytes, bytes]], special_tokens :  list[str] | None=None):
         self._vocab = vocab
+        self._vocab_size = len(vocab)
+        self._inverted_vocab = {v: k for k, v in self._vocab.items()}
         self._merges = merges
+        self._merges_size = len(merges)
 
         if special_tokens is None:
             self._rm_st_pattern = None
@@ -21,9 +24,12 @@ class Tokenizer:
             self._rm_st_pattern = f"({'|'.join(map(re.escape, sp))})"
             self._special_tokens = set(sp)
             for st in sp:
-                self._vocab[len(self._vocab)] = st.encode('utf-8')
-
-        self._inverted_vocab = {v: k for k, v in self._vocab.items()}
+                st_encoded = st.encode('utf-8')
+                if st_encoded in self._inverted_vocab:
+                    continue
+                self._vocab[self._vocab_size] = st_encoded
+                self._inverted_vocab[st_encoded] = self._vocab_size
+                self._vocab_size = self._vocab_size + 1
         
 
     def from_files(cls, vocab_filepath = str, merges_filepath = str, special_tokens : list[str] | None=None):
