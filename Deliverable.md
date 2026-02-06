@@ -43,3 +43,34 @@ Some utf8 needs more than 1 bytes to represent.
 **(c) Give a two byte sequence that does not decode to any Unicode character(s).**
 
 
+```
+configfile: pyproject.toml
+plugins: metadata-3.1.1, anyio-4.12.1, jaxtyping-0.3.2, html-4.2.0
+collected 25 items                                                                                                                                                                                    
+
+tests/test_tokenizer.py::test_roundtrip_empty PASSED
+tests/test_tokenizer.py::test_empty_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_roundtrip_single_character PASSED
+tests/test_tokenizer.py::test_single_character_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_roundtrip_single_unicode_character PASSED
+tests/test_tokenizer.py::test_single_unicode_character_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_roundtrip_ascii_string PASSED
+tests/test_tokenizer.py::test_ascii_string_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_roundtrip_unicode_string PASSED
+tests/test_tokenizer.py::test_unicode_string_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_roundtrip_unicode_string_with_special_tokens PASSED
+tests/test_tokenizer.py::test_unicode_string_with_special_tokens_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_overlapping_special_tokens PASSED
+tests/test_tokenizer.py::test_address_roundtrip PASSED
+tests/test_tokenizer.py::test_address_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_german_roundtrip PASSED
+tests/test_tokenizer.py::test_german_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_tinystories_sample_roundtrip PASSED
+tests/test_tokenizer.py::test_tinystories_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_encode_special_token_trailing_newlines PASSED
+tests/test_tokenizer.py::test_encode_special_token_double_newline_non_whitespace PASSED
+tests/test_tokenizer.py::test_encode_iterable_tinystories_sample_roundtrip PASSED
+tests/test_tokenizer.py::test_encode_iterable_tinystories_matches_tiktoken PASSED
+tests/test_tokenizer.py::test_encode_iterable_memory_usage PASSED
+tests/test_tokenizer.py::test_encode_memory_usage XFAIL (Tokenizer.encode is expected to take more memory than allotted (1MB).)
+```
