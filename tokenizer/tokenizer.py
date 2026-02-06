@@ -9,18 +9,20 @@ class Tokenizer:
     invalid_data = b'\xff'
 
     def __init__(self, vocab : dict[int, bytes], merges : list[tuple[bytes, bytes]], special_tokens :  list[str] | None=None):
-        self._special_tokens = set(special_tokens)
+        self._vocab = vocab
+        self._merges = merges
+
         if special_tokens is None:
             self._rm_st_pattern = None
+            self._special_tokens = None
         else:
+            self._special_tokens = set(special_tokens)
             self._rm_st_pattern = f"({'|'.join(map(re.escape, special_tokens))})"
-
-        self._vocab = vocab
-        if special_tokens is not None:
             for st in special_tokens:
                 self._vocab[len(self._vocab)] = st.encode('utf-8')
+
         self._inverted_vocab = {v: k for k, v in self._vocab.items()}
-        self._merges = merges
+        
 
     def from_files(cls, vocab_filepath = str, merges_filepath = str, special_tokens : list[str] | None=None):
         vocab_path = Path(vocab_filepath)
@@ -69,7 +71,7 @@ class Tokenizer:
     def _compile_to_bytes_list(self, docs: list[str]) -> list[list[bytes]]:
         bytes_list = []
         for doc in docs:
-            if doc in self._special_tokens:
+            if self._special_tokens is not None and doc in self._special_tokens:
                 bytes_list.append(doc)
                 continue
             matches = re.finditer(Tokenizer.PAT, doc)
