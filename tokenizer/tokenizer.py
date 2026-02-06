@@ -55,12 +55,8 @@ class Tokenizer:
         return encoded_output
     
     def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
-        """Given an iterable of strings (e.g., a Python file handle), return a generator that lazily yields token IDs. This is required for memory-eﬀicient tokenization of large files that we cannot directly load into memory.
-        """
         for text in iterable:
-            encoded = self.encode(text)
-            for e in encoded:
-                yield e
+            yield from self.encode(text)    
 
     def decode(self, ids: list[int]) -> str:
         builder = bytearray()
