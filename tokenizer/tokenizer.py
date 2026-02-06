@@ -66,7 +66,7 @@ class Tokenizer:
         builder = bytearray()
         for id in ids:
             builder.extend(self._vocab.get(id, Tokenizer.invalid_data))
-        return bytes(builder).decode('utf-8')
+        return bytes(builder).decode('utf-8', errors='replace')
     
     def _pretokenization(self, text: str):
         st_processed_text = self._process_special_tokens(text)
