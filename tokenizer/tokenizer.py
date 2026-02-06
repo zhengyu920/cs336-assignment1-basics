@@ -16,9 +16,11 @@ class Tokenizer:
             self._rm_st_pattern = None
             self._special_tokens = None
         else:
-            self._special_tokens = set(special_tokens)
-            self._rm_st_pattern = f"({'|'.join(map(re.escape, special_tokens))})"
-            for st in special_tokens:
+            sp = special_tokens
+            sp.sort(key=len, reverse=True)
+            self._rm_st_pattern = f"({'|'.join(map(re.escape, sp))})"
+            self._special_tokens = set(sp)
+            for st in sp:
                 self._vocab[len(self._vocab)] = st.encode('utf-8')
 
         self._inverted_vocab = {v: k for k, v in self._vocab.items()}
@@ -105,9 +107,9 @@ class Tokenizer:
 if __name__ == '__main__':
     vocab = {0: b' ', 1: b'a', 2:b'c', 3: b'e', 4: b'h', 5: b't', 6: b'th', 7: b' c', 8: b' a', 9: b'the', 10: b' at'}
     merges = [(b't', b'h'), (b' ', b'c'), (b' ', b'a'), (b'th', b'e'), (b' a', b't')]
-    st = ['<|endoftext|>']
+    st = ["<|endoftext|>", "<|endoftext|><|endoftext|>"]
     t = Tokenizer(vocab, merges, st)
-    text = 'the cat<|endoftext|><|endoftext|> ate'
+    text = 'the cat<|endoftext|><|endoftext|> ate<|endoftext|>'
     print(t._process_special_tokens(text))
     print(t._pretokenization(text))
     encoded = t.encode(text)
