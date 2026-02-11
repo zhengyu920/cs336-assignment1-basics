@@ -7,6 +7,7 @@ from cs336_basics.tokenizer import bpe_trainer
 from cs336_basics.tokenizer import tokenizer
 from cs336_basics.transformer import linear
 from cs336_basics.transformer import embedding
+from cs336_basics.transformer import norm
 
 import numpy.typing as npt
 import torch
@@ -386,7 +387,9 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    raise NotImplementedError
+    rmsnorm = norm.RMSNorm(d_model, eps)
+    rmsnorm.load_state_dict({'g': weights})
+    return rmsnorm(in_features)
 
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
