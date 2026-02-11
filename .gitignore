@@ -166,3 +166,5 @@ cython_debug/
 data/
 
 scalene-profile.html
+
+.DS_Store
