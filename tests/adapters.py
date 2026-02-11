@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 from collections.abc import Iterable
 from typing import IO, Any, BinaryIO
-from tokenizer import bpe_trainer
-from tokenizer import tokenizer
+from cs336_basics.tokenizer import bpe_trainer
+from cs336_basics.tokenizer import tokenizer
+from cs336_basics.transformer import linear
 
 import numpy.typing as npt
 import torch
@@ -31,7 +32,10 @@ def run_linear(
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
 
-    raise NotImplementedError
+    layer = linear.Linear(d_in, d_out)
+    layer.load_state_dict({'w': weights})
+
+    return layer(in_features)
 
 
 def run_embedding(
