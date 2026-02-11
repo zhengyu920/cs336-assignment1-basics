@@ -1,7 +1,9 @@
+import pickle
 import os
-from tokenizer.pretokenization import pretokenization
+from cs336_basics.tokenizer.pretokenization import pretokenization
 import time
 import statistics
+
 
 def find_max_bp(pretokenized_count):
     # Count byte pairs
@@ -38,6 +40,7 @@ def merge_bp(pretokenized_count: dict[tuple[bytes], int], merge):
         new_pretokenized_count[tuple(new_pt)] = count
     return new_pretokenized_count
 
+
 def init_vocab(special_tokens: list[str]) -> dict[int, bytes]:
     vocab = {}
     for i in range(256):
@@ -47,7 +50,8 @@ def init_vocab(special_tokens: list[str]) -> dict[int, bytes]:
         vocab[idx] = st.encode('utf8')
     return vocab
 
-def print_perf_stats(pretokenization_time : float, find_map_bp_time : list[float], merge_bp_time: list[float]):
+
+def print_perf_stats(pretokenization_time: float, find_map_bp_time: list[float], merge_bp_time: list[float]):
     fmb_time_sum = sum(find_map_bp_time)
     fmb_time_avg = statistics.mean(find_map_bp_time)
     fmb_time_median = statistics.median(find_map_bp_time)
@@ -56,12 +60,15 @@ def print_perf_stats(pretokenization_time : float, find_map_bp_time : list[float
     mb_time_avg = statistics.mean(merge_bp_time)
     mb_time_median = statistics.median(merge_bp_time)
 
-    print(f"Total execution time: {pretokenization_time + fmb_time_sum + mb_time_sum:.4f} seconds")
-    print(f"Pretokenization execution time: {pretokenization_time:.4f} seconds")
+    print(
+        f"Total execution time: {pretokenization_time + fmb_time_sum + mb_time_sum:.4f} seconds")
+    print(
+        f"Pretokenization execution time: {pretokenization_time:.4f} seconds")
     print(f"Find max BP time avg: {fmb_time_avg * 1000:.2f} ms")
     print(f"Find max BP time median: {fmb_time_median * 1000:.2f} ms")
     print(f"Merge BP time avg: {mb_time_avg * 1000:.2f} ms")
     print(f"Merge BP time median: {mb_time_median * 1000:.2f} ms")
+
 
 def train_bpe(
         input_path: str | os.PathLike,
@@ -73,11 +80,12 @@ def train_bpe(
     start_time = time.perf_counter()
     num_processes = 32
     print(f"Running pretokenizatoin with {num_processes} processes...")
-    pretokenized_count = pretokenization(input_path, special_tokens, num_processes)
+    pretokenized_count = pretokenization(
+        input_path, special_tokens, num_processes)
     print("Pretokenization is done...")
     end_time = time.perf_counter()
     pretokenization_time = end_time - start_time
-    #print(f'prtokenization result: {pretokenized_count}')
+    # print(f'prtokenization result: {pretokenized_count}')
     find_max_bp_time = []
     merge_bp_time = []
     print("Start training")
@@ -101,7 +109,6 @@ def train_bpe(
     print_perf_stats(pretokenization_time, find_max_bp_time, merge_bp_time)
     return vocab, merges
 
-import pickle
 
 if __name__ == "__main__":
     input_path = './data/owt_train.txt'

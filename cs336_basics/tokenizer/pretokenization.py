@@ -3,7 +3,8 @@ from typing import BinaryIO
 import regex as re
 import multiprocessing
 from pathlib import Path
-from tokenizer.thread_safe_counter import ThreadSafeCounter
+from cs336_basics.tokenizer.thread_safe_counter import ThreadSafeCounter
+
 
 def find_chunk_boundaries(
     file: BinaryIO,
@@ -14,7 +15,8 @@ def find_chunk_boundaries(
     Chunk the file into parts that can be counted independently.
     May return fewer chunks if the boundaries end up overlapping.
     """
-    assert isinstance(split_special_token, bytes), "Must represent special token as a bytestring"
+    assert isinstance(split_special_token,
+                      bytes), "Must represent special token as a bytestring"
 
     # Get total file size in bytes
     file.seek(0, os.SEEK_END)
@@ -59,6 +61,7 @@ def remove_special_tokens(content: str, special_tokens: list[str]) -> list[str]:
 
 PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 
+
 def pretokenize_chunk(content: str, special_tokens: list[str], output_counter: ThreadSafeCounter):
     docs = remove_special_tokens(content, special_tokens)
     counter = {}
@@ -70,26 +73,31 @@ def pretokenize_chunk(content: str, special_tokens: list[str], output_counter: T
             counter[text] = counter.get(text, 0) + 1
     output_counter.increment_from_dict(counter)
 
+
 def process_with_multiprocessing(input_path: str | os.PathLike, special_tokens: list[str], num_processes: int):
     path = Path(input_path)
     with multiprocessing.Manager() as manager:
         counter = ThreadSafeCounter(manager)
         with open(path, "rb") as f:
             processes = []
-            boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+            boundaries = find_chunk_boundaries(
+                f, num_processes, b"<|endoftext|>")
             # The following is a serial implementation, but you can parallelize this
             # by sending each start/end pair to a set of processes.
             for start, end in zip(boundaries[:-1], boundaries[1:]):
                 f.seek(start)
                 chunk = f.read(end - start).decode("utf-8", errors="ignore")
                 # Run pre-tokenization on your chunk and store the counts for each pre-token
-                p = multiprocessing.Process(target=pretokenize_chunk, args=(chunk, special_tokens, counter))
+                p = multiprocessing.Process(
+                    target=pretokenize_chunk, args=(chunk, special_tokens, counter))
                 processes.append(p)
                 p.start()
             for p in processes:
                 p.join()
         return counter.to_dict()
 
-## Usage
+# Usage
+
+
 def pretokenization(input_path: str | os.PathLike, special_tokens: list[str], num_processes: int = 8):
     return process_with_multiprocessing(input_path, special_tokens, num_processes)
