@@ -8,6 +8,7 @@ from cs336_basics.tokenizer import tokenizer
 from cs336_basics.transformer import linear
 from cs336_basics.transformer import embedding
 from cs336_basics.transformer import norm
+from cs336_basics.transformer.ffn import SwiGLU
 
 import numpy.typing as npt
 import torch
@@ -92,7 +93,13 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+    swiglu = SwiGLU(d_ff, d_model)
+    swiglu.load_state_dict({
+        "l1.w": w1_weight,
+        "l2.w": w2_weight,
+        "l3.w": w3_weight
+    })
+    return swiglu(in_features)
 
 
 def run_scaled_dot_product_attention(
