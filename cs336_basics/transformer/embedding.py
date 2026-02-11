@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-import math
+from cs336_basics.transformer import init_param
 
 
 class Embedding(nn.Module):
@@ -10,13 +10,7 @@ class Embedding(nn.Module):
         self.embedding_dim = embedding_dim
         self.device = device
         self.dtype = dtype
-        std = math.sqrt(2 / (num_embeddings + embedding_dim))
-        eb_init = nn.init.trunc_normal_(tensor=torch.zeros([num_embeddings, embedding_dim]),
-                                        mean=0,
-                                        std=std,
-                                        a=-3*std,
-                                        b=3*std)
-        self.embeddings = nn.Parameter(eb_init)
+        self.embeddings = init_param.init_param(num_embeddings, embedding_dim)
 
     def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
         return self.embeddings[token_ids]
