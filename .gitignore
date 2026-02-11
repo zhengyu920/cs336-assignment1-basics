@@ -168,3 +168,5 @@ data/
 scalene-profile.html
 
 .DS_Store
+
+.vscode/
