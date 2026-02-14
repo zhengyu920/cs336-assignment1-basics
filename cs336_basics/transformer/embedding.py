@@ -38,6 +38,6 @@ class RoPE(nn.Module):
 
     def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor:
         rotations = self.rotations[token_positions, :, :]
-        # rotations = rearrange(
-        #     rotations, "... seq_len d_k_1 d_k_2 -> ... seq_len d_k_2 d_k_1")
-        return einsum(x, rotations, "... seq_len d_k, ... seq_len d_k d_k -> ... seq_len d_k")
+        rotations = rearrange(
+            rotations, "... seq_len d_k_1 d_k_2 -> ... seq_len d_k_2 d_k_1")
+        return einsum(x, rotations, "... seq_len d_k_2, ... seq_len d_k_2 d_k_1 -> ... seq_len d_k_1")
