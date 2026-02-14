@@ -34,10 +34,12 @@ class RoPE(nn.Module):
                     [math.sin(theta_i_k), math.cos(theta_i_k)]])
                 r_i.append(r_i_k)
             rotations.append(torch.block_diag(*r_i))
-        self.rotations = torch.stack(rotations)
+        self.register_buffer('rope',
+                             torch.stack(rotations),
+                             persistent=False)
 
     def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor:
-        rotations = self.rotations[token_positions, :, :]
+        rotations = self.rope[token_positions, :, :]
         rotations = rearrange(
             rotations, "... seq_len d_k_1 d_k_2 -> ... seq_len d_k_2 d_k_1")
-        return einsum(x, rotations, "... seq_len d_k_2, ... seq_len d_k_2 d_k_1 -> ... seq_len d_k_1")
+        return einsum(x, rotations, "... seq_len d_k_in, ... seq_len d_k_in d_k_out -> ... seq_len d_k_out")
