@@ -10,6 +10,7 @@ from cs336_basics.transformer import embedding
 from cs336_basics.transformer import norm
 from cs336_basics.transformer.ffn import SwiGLU
 from cs336_basics.transformer.functional import Softmax
+from cs336_basics.transformer.attention import ScaledDotProductAttention
 
 import numpy.typing as npt
 import torch
@@ -121,7 +122,8 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
+    att = ScaledDotProductAttention()
+    return att(Q, K, V, mask)
 
 
 def run_multihead_self_attention(
