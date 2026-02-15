@@ -12,6 +12,7 @@ from cs336_basics.transformer.ffn import SwiGLU
 from cs336_basics.transformer.functional import Softmax
 from cs336_basics.transformer.attention import ScaledDotProductAttention
 from cs336_basics.transformer.attention import MultiHeadSelfAttention
+from cs336_basics.transformer.transformer import TransformerBlock
 
 import numpy.typing as npt
 import torch
@@ -308,7 +309,20 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    block = TransformerBlock(d_model, num_heads, max_seq_len, theta, d_ff)
+    block.load_state_dict({
+        'muti_head_att.q_proj_weight': weights['attn.q_proj.weight'],
+        'muti_head_att.k_proj_weight': weights['attn.k_proj.weight'],
+        'muti_head_att.v_proj_weight': weights['attn.v_proj.weight'],
+        'muti_head_att.o_proj_weight': weights['attn.output_proj.weight'],
+        'ln1.g': weights['ln1.weight'],
+        'ln2.g': weights['ln2.weight'],
+        'ffn.l1.w': weights['ffn.w1.weight'],
+        'ffn.l2.w': weights['ffn.w2.weight'],
+        'ffn.l3.w': weights['ffn.w3.weight'],
+    })
+    token_positions = torch.arange(in_features.shape[-2], dtype=torch.int)
+    return block(in_features, token_positions)
 
 
 def run_transformer_lm(
