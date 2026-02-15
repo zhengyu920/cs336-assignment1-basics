@@ -11,6 +11,7 @@ from cs336_basics.transformer import norm
 from cs336_basics.transformer.ffn import SwiGLU
 from cs336_basics.transformer.functional import Softmax
 from cs336_basics.transformer.attention import ScaledDotProductAttention
+from cs336_basics.transformer.attention import MultiHeadSelfAttention
 
 import numpy.typing as npt
 import torch
@@ -157,7 +158,14 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    multi = MultiHeadSelfAttention(d_model, num_heads)
+    multi.load_state_dict({
+        "q_proj_weight": q_proj_weight,
+        "k_proj_weight": k_proj_weight,
+        "v_proj_weight": v_proj_weight,
+        "o_proj_weight": o_proj_weight,
+    })
+    return multi(in_features)
 
 
 def run_multihead_self_attention_with_rope(
