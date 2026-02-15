@@ -31,7 +31,7 @@ class ScaledDotProductAttention(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, d_model: int, num_heads: int, theta: float = 0, device=None):
+    def __init__(self, d_model: int, num_heads: int, max_seq_len: int = 1000, theta: float = 0, device=None):
         super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads
@@ -47,8 +47,14 @@ class MultiHeadSelfAttention(nn.Module):
             self.d_k * self.num_heads, self.d_model)
         self.attention = ScaledDotProductAttention()
         self.theta = theta
-        self.rope = RoPE(self.theta, self.d_k, 1000,
+        self.max_seq_length = max_seq_len
+        self.rope = RoPE(self.theta, self.d_k, self.max_seq_length,
                          device) if self.theta != 0 else None
+
+    def _apply_rope(self, x, token_positions):
+        if self.rope is None:
+            return x
+        return self.rope(x, token_positions)
 
     def forward(self, x: Float[torch.Tensor, "... seq d_model"],
                 token_positions: Int[torch.Tensor,
@@ -64,8 +70,10 @@ class MultiHeadSelfAttention(nn.Module):
         mask = torch.tril(torch.ones(seq, seq)).bool()
         attentions = []
         for i in range(self.num_heads):
-            Qi = Q[..., i * self.d_k: (i+1)*self.d_k]
-            Ki = K[..., i * self.d_k: (i+1)*self.d_k]
+            Qi = self._apply_rope(
+                Q[..., i * self.d_k: (i+1)*self.d_k], token_positions)
+            Ki = self._apply_rope(
+                K[..., i * self.d_k: (i+1)*self.d_k], token_positions)
             Vi = V[..., i * self.d_k: (i+1)*self.d_k]
             attentions.append(self.attention(Qi, Ki, Vi, mask))
         return einsum(torch.concat(attentions, dim=-1), self.o_proj_weight, "... seq d_model_in, d_model_out d_model_in -> ... seq d_model_out")
