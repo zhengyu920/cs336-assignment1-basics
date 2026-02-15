@@ -58,4 +58,4 @@ class MultiHeadSelfAttention(nn.Module):
         mask = torch.tril(torch.ones(seq, seq)).bool()
         attentions = [self.attention(Q[..., i * self.d_k: (i+1)*self.d_k], K[..., i * self.d_k: (i+1)*self.d_k], V[..., i * self.d_k: (i+1)*self.d_k], mask)
                       for i in range(self.num_heads)]
-        return einsum(torch.concat(attentions, dim=-1), self.o_proj_weight, "... seq d_model, d_model d_model -> ... seq d_model")
+        return einsum(torch.concat(attentions, dim=-1), self.o_proj_weight, "... seq d_model_in, d_model_out d_model_in -> ... seq d_model_out")
