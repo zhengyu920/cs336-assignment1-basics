@@ -13,6 +13,7 @@ from cs336_basics.transformer.functional import Softmax
 from cs336_basics.transformer.attention import ScaledDotProductAttention
 from cs336_basics.transformer.attention import MultiHeadSelfAttention
 from cs336_basics.transformer.transformer import TransformerBlock
+from cs336_basics.transformer.transformer import TransformerLM
 
 import numpy.typing as npt
 import torch
@@ -404,7 +405,28 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    lm = TransformerLM(vocab_size, context_length, d_model,
+                       num_layers, num_heads, d_ff, rope_theta)
+    weights_map = {}
+    weights_map['embed.embeddings'] = weights['token_embeddings.weight']
+    for i in range(num_layers):
+        weights_map[f'transformer_blocks.{i}.muti_head_att.q_proj_weight'] = weights[
+            f'layers.{i}.attn.q_proj.weight']
+        weights_map[f'transformer_blocks.{i}.muti_head_att.k_proj_weight'] = weights[
+            f'layers.{i}.attn.k_proj.weight']
+        weights_map[f'transformer_blocks.{i}.muti_head_att.v_proj_weight'] = weights[
+            f'layers.{i}.attn.v_proj.weight']
+        weights_map[f'transformer_blocks.{i}.muti_head_att.o_proj_weight'] = weights[
+            f'layers.{i}.attn.output_proj.weight']
+        weights_map[f'transformer_blocks.{i}.ln1.g'] = weights[f'layers.{i}.ln1.weight']
+        weights_map[f'transformer_blocks.{i}.ln2.g'] = weights[f'layers.{i}.ln2.weight']
+        weights_map[f'transformer_blocks.{i}.ffn.l1.w'] = weights[f'layers.{i}.ffn.w1.weight']
+        weights_map[f'transformer_blocks.{i}.ffn.l2.w'] = weights[f'layers.{i}.ffn.w2.weight']
+        weights_map[f'transformer_blocks.{i}.ffn.l3.w'] = weights[f'layers.{i}.ffn.w3.weight']
+    weights_map['ln_final.g'] = weights['ln_final.weight']
+    weights_map['output_embed.w'] = weights['lm_head.weight']
+    lm.load_state_dict(weights_map)
+    return lm(in_indices)
 
 
 def run_rmsnorm(
