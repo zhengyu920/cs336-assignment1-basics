@@ -16,8 +16,6 @@ class TransformerBlock(nn.Module):
             d_model, num_heads, max_seq_len, theta)
 
     def forward(self, x, token_positions):
-        y = self.ln1(x)
-        y = y + self.muti_head_att(y, token_positions)
-        y = self.ln2(y)
-        y = y + self.ffn(y)
+        y = x + self.muti_head_att(self.ln1(x), token_positions)
+        y += self.ffn(self.ln2(y))
         return y
