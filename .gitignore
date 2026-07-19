@@ -165,4 +165,5 @@ cython_debug/
 # Data
 data/
 
-*.prof
+# Profiling
+prof/
