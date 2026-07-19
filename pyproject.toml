@@ -47,6 +47,7 @@ line-length = 120
 
 [dependency-groups]
 dev = [
+    "py-spy>=0.4.2",
     "snakeviz>=2.2.2",
 ]
 
