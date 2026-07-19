@@ -1,6 +1,8 @@
 import os
 from typing import BinaryIO
 
+from pretokenization import pretokenize
+
 
 def find_chunk_boundaries(
     file: BinaryIO,
@@ -54,24 +56,109 @@ def bytes_to_tuple(input: bytes) -> tuple[bytes]:
     result = []
     for i in range(len(input)):
         result.append(input[i: i+1])
-    print(result)
     return tuple(result)
 
 
-with open(input_path, "rb") as f:
-    num_processes = 4
-    boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+def init_counter(input_path: str | os.PathLike,
+                 special_tokens: list[str]
+                 ) -> dict[tuple[bytes], int]:
+    counter = {}
 
-    # The following is a serial implementation, but you can parallelize this
-    # by sending each start/end pair to a set of processes.
-    for start, end in zip(boundaries[:-1], boundaries[1:]):
-        f.seek(start)
-        chunk = f.read(end - start).decode("utf-8", errors="ignore")
-        # Run pre-tokenization on your chunk and store the counts for each pre-token
+    with open(input_path, "rb") as f:
+        num_processes = 4
+        boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+
+        # The following is a serial implementation, but you can parallelize this
+        # by sending each start/end pair to a set of processes.
+        for start, end in zip(boundaries[:-1], boundaries[1:]):
+            f.seek(start)
+            chunk = f.read(end - start).decode("utf-8", errors="ignore")
+            # Run pre-tokenization on your chunk and store the counts for each pre-token
+            pretokens = pretokenize(chunk, special_tokens)
+            for pretoken in pretokens:
+                bytes_tuple = bytes_to_tuple(pretoken.encode('utf-8'))
+                counter[bytes_tuple] = counter.get(bytes_tuple, 0) + 1
+    return counter
+
+
+def find_max_bp(w_counts: dict[tuple[bytes], int]
+                ) -> tuple[tuple[bytes, bytes] | None, int]:
+    bp_counter = {}
+    for w, count in w_counts.items():
+        for i in range(len(w) - 1):
+            bp = (w[i], w[i+1])
+            bp_counter[bp] = bp_counter.get(bp, 0) + count
+
+    if len(bp_counter) == 0:
+        return None, 0
+
+    bp_max = None
+    bp_max_count = 0
+    for bp, count in bp_counter.items():
+        if count > bp_max_count:
+            bp_max = bp
+            bp_max_count = count
+        elif count == bp_max_count and bp > bp_max:
+            bp_max = bp
+            bp_max_count = count
+    return bp_max, bp_max_count
+
+
+def try_merge_bp(w: tuple[bytes], bp_to_merge: tuple[bytes, bytes]) -> tuple[bytes]:
+    if (len(w) < 2):
+        return w
+
+    merged_bp = bp_to_merge[0] + bp_to_merge[1]
+
+    new_w = []
+    i = 0
+    while i < len(w):
+        if i < len(w) - 1 and w[i] + w[i+1] == merged_bp:
+            new_w.append(merged_bp)
+            i += 2
+        else:
+            new_w.append(w[i])
+            i += 1
+    return tuple(new_w)
+
+
+def merge(w_counts: dict, bp_to_merge: tuple[bytes, bytes]) -> dict[tuple[bytes], int]:
+    result = {}
+    for w, count in w_counts.items():
+        new_w = try_merge_bp(w, bp_to_merge)
+        result[new_w] = result.get(new_w, 0) + count
+    return result
 
 
 def train_bpe(input_path: str | os.PathLike,
               vocab_size: int,
               special_tokens: list[str]
               ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
-    return ({}, [])
+    vocab = {}
+    merges = []
+    for i in range(256):
+        idx = len(vocab)
+        vocab[idx] = i.to_bytes()
+    for st in special_tokens:
+        idx = len(vocab)
+        vocab[idx] = st.encode('utf-8')
+    # print('Initial vocab: \n', vocab)
+
+    counter = init_counter(input_path, special_tokens)
+    while len(vocab) < vocab_size:
+        # print('Premerge: \n', counter)
+        bp, _ = find_max_bp(counter)
+        if bp is None:
+            break
+        # print('Bp to merge: ', bp, "Count: ", count)
+        counter = merge(counter, bp)
+        vocab[len(vocab)] = bp[0] + bp[1]
+        merges.append(bp)
+    return (vocab, merges)
+
+
+if __name__ == '__main__':
+    # path = 'data/TinyStoriesV2-GPT4-valid.txt'
+    path = 'data/bpe_example.txt'
+    special_tokens = ['<|endoftext|>']
+    train_bpe(path, 259, special_tokens)
