@@ -61,8 +61,11 @@ def merge(w_counts: dict, bp_to_merge: bytes) -> dict[tuple[bytes], int]:
     return result
 
 
-with open('data/bpe_example.txt') as f:
-    content = f.read()
+content = """
+low low low low low
+lower lower widest widest widest
+newest newest newest newest newest newest
+"""
 w_counts = preprocess(content)
 
 new_vocab = []
