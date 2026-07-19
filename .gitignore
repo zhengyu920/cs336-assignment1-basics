@@ -167,3 +167,5 @@ data/
 
 # Profiling
 prof/
+
+.DS_Store
