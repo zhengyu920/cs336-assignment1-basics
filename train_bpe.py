@@ -158,7 +158,7 @@ def train_bpe(input_path: str | os.PathLike,
 
 
 if __name__ == '__main__':
-    # path = 'data/TinyStoriesV2-GPT4-valid.txt'
-    path = 'data/bpe_example.txt'
+    path = 'data/TinyStoriesV2-GPT4-valid.txt'
+    # path = 'data/bpe_example.txt'
     special_tokens = ['<|endoftext|>']
     train_bpe(path, 259, special_tokens)
