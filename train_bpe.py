@@ -76,9 +76,12 @@ def init_counter(input_path: str | os.PathLike,
             # Run pre-tokenization on your chunk and store the counts for each pre-token
             pretokens = pretokenize(chunk, special_tokens)
             for pretoken in pretokens:
-                bytes_tuple = bytes_to_tuple(pretoken.encode('utf-8'))
-                counter[bytes_tuple] = counter.get(bytes_tuple, 0) + 1
-    return counter
+                counter[pretoken] = counter.get(pretoken, 0) + 1
+    bytes_counter = {}
+    for k, v in counter.items():
+        bytes_tuple = bytes_to_tuple(k.encode('utf-8'))
+        bytes_counter[bytes_tuple] = v
+    return bytes_counter
 
 
 def find_max_bp(w_counts: dict[tuple[bytes], int]
