@@ -4,7 +4,6 @@ PAT = re.compile(
     r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
 
 
-@profile
 def pretokenize(input_text: str, special_tokens: list[str]) -> list[str]:
     splits = []
     if len(special_tokens) == 0:

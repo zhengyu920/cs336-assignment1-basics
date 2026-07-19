@@ -1,7 +1,7 @@
 import os
 from typing import BinaryIO
-
 from pretokenization import pretokenize
+from multiprocessing import Pool
 
 
 def find_chunk_boundaries(
@@ -59,24 +59,37 @@ def bytes_to_tuple(input: bytes) -> tuple[bytes]:
     return tuple(result)
 
 
-def init_counter(input_path: str | os.PathLike,
-                 special_tokens: list[str]
-                 ) -> dict[tuple[bytes], int]:
-    counter = {}
-
+def process_chunk(input_path: str | os.PathLike,
+                  special_tokens: list[str],
+                  start_pos: int,
+                  end_pos: int) -> dict[str, int]:
     with open(input_path, "rb") as f:
-        num_processes = 4
+        f.seek(start_pos)
+        chunk = f.read(end_pos - start_pos).decode("utf-8", errors="ignore")
+        pretoken = pretokenize(chunk, special_tokens)
+        counter = {}
+        for token in pretoken:
+            counter[token] = counter.get(token, 0) + 1
+        return counter
+
+
+def init_counter(input_path: str | os.PathLike,
+                 special_tokens: list[str],
+                 num_processes: int = 4
+                 ) -> dict[tuple[bytes], int]:
+    with open(input_path, "rb") as f:
         boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
 
-        # The following is a serial implementation, but you can parallelize this
-        # by sending each start/end pair to a set of processes.
+        # prepare subprocess args
+        args = []
         for start, end in zip(boundaries[:-1], boundaries[1:]):
-            f.seek(start)
-            chunk = f.read(end - start).decode("utf-8", errors="ignore")
-            # Run pre-tokenization on your chunk and store the counts for each pre-token
-            pretokens = pretokenize(chunk, special_tokens)
-            for pretoken in pretokens:
-                counter[pretoken] = counter.get(pretoken, 0) + 1
+            args.append((input_path, special_tokens, start, end))
+        with Pool(num_processes) as p:
+            all_counters = p.starmap(process_chunk, args)
+    counter = {}
+    for c in all_counters:
+        for token, count in c.items():
+            counter[token] = counter.get(token, 0) + count
     bytes_counter = {}
     for k, v in counter.items():
         bytes_tuple = bytes_to_tuple(k.encode('utf-8'))
