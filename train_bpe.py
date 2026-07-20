@@ -181,6 +181,14 @@ def init_bp_count(w_counter: dict[tuple[bytes], int]
 
     return bp_counter, bp_w_map, w_bp_map
 
+def cleanup_bp_counter(bp_counter: dict[tuple[bytes, bytes], int]):
+    keys_to_delete = []
+    for bp, count in bp_counter.items():
+        if count == 0:
+            keys_to_delete.append(bp)
+    for key in keys_to_delete:
+        bp_counter.pop(key)
+
 
 def train_bpe(input_path: str | os.PathLike,
               vocab_size: int,
@@ -207,6 +215,7 @@ def train_bpe(input_path: str | os.PathLike,
         if bp_to_merge is None:
             break
         merge(w_counter, bp_counter, bp_w_map, w_bp_map, bp_to_merge)
+        cleanup_bp_counter(bp_counter)
         vocab[len(vocab)] = bp_to_merge[0] + bp_to_merge[1]
         merges.append(bp_to_merge)
     return (vocab, merges)
