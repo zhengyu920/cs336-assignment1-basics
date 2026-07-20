@@ -161,14 +161,8 @@ def merge(w_counter: dict,
         for i in range(len(new_w) - 1):
             bp = (new_w[i], new_w[i+1])
             bp_counter[bp] = bp_counter.get(bp, 0) + w_count
-
-            bp_w = bp_w_map.get(bp, set())
-            bp_w.add(new_w)
-            bp_w_map[bp] = bp_w
-
-            w_bp = w_bp_map.get(new_w, [])
-            w_bp.append(bp)
-            w_bp_map[new_w] = w_bp
+            bp_w_map.setdefault(bp, set()).add(new_w)
+            w_bp_map.setdefault(new_w, []).append(bp)
     bp_counter.pop(bp_to_merge)
     bp_w_map.pop(bp_to_merge)
     return w_counter, bp_counter, bp_w_map, w_bp_map
@@ -183,14 +177,8 @@ def init_bp_count(w_counter: dict[tuple[bytes], int]
         for i in range(len(w) - 1):
             bp = (w[i], w[i+1])
             bp_counter[bp] = bp_counter.get(bp, 0) + count
-
-            bp_w = bp_w_map.get(bp, set())
-            bp_w.add(w)
-            bp_w_map[bp] = bp_w
-
-            w_bp = w_bp_map.get(w, [])
-            w_bp.append(bp)
-            w_bp_map[w] = w_bp
+            bp_w_map.setdefault(bp, set()).add(w)
+            w_bp_map.setdefault(w, []).append(bp)
 
     return bp_counter, bp_w_map, w_bp_map
 
