@@ -161,38 +161,32 @@ def merge(w_counter: dict,
           ):
     w_to_merge = bp_w_map[bp_to_merge]
 
-    for w in w_to_merge:
-        merge_idx = try_find_merge_bp_idx(w, bp_to_merge)
-        for idx in merge_idx:
-            if idx >= 1:
-                if (w[idx-1], w[idx]) in bp_counter:
-                    bp_counter[(w[idx-1], w[idx])] -= w_counter[w]
-                bp_counter[(w[idx-1], w[idx]+w[idx+1])
-                           ] = bp_counter.get((w[idx-1], w[idx]+w[idx+1]), 0) + w_counter[w]
-            if idx < len(w) - 2:
-                if (w[idx+1], w[idx+2]) in bp_counter:
-                    bp_counter[(w[idx+1], w[idx+2])] -= w_counter[w]
-                bp_counter[(w[idx]+w[idx+1], w[idx+2])
-                           ] = bp_counter.get((w[idx]+w[idx+1], w[idx+2]), 0) + w_counter[w]
-
-        w_bp = w_bp_map[w]
-        for bp in w_bp:
-            bp_w_map[bp].pop(w)
-
-    for w in w_to_merge:
-        new_w = try_merge_bp(w, bp_to_merge)
-        count = w_counter.pop(w)
-        w_counter[new_w] = count
+    for old_w in w_to_merge:
+        new_w = try_merge_bp(old_w, bp_to_merge)
+        w_count = w_counter[old_w]
+        w_counter[new_w] = w_counter.get(new_w, 0) + w_count
+        w_counter.pop(old_w)
+        # deduct all bp in w from bp_counter and bp_w_map
+        for bp in w_bp_map[old_w]:
+            if bp != bp_to_merge:
+                bp_counter[bp] -= w_count
+                bp_w_map[bp].discard(old_w)
+        # revmoe from w_bp_map
+        w_bp_map.pop(old_w)
+        # add new_w bps
         for i in range(len(new_w) - 1):
             bp = (new_w[i], new_w[i+1])
+            bp_counter[bp] = bp_counter.get(bp, 0) + w_count
 
             bp_w = bp_w_map.get(bp, set())
             bp_w.add(new_w)
             bp_w_map[bp] = bp_w
 
-            w_bp = w_bp_map.get(new_w, set())
-            w_bp.add(bp)
+            w_bp = w_bp_map.get(new_w, [])
+            w_bp.append(bp)
             w_bp_map[new_w] = w_bp
+    bp_counter.pop(bp_to_merge)
+    bp_w_map.pop(bp_to_merge)
     return w_counter, bp_counter, bp_w_map, w_bp_map
 
 
@@ -200,7 +194,7 @@ def init_bp_count(w_counter: dict[tuple[bytes], int]
                   ):
     bp_counter: dict[tuple[bytes, bytes], int] = {}
     bp_w_map: dict[tuple[bytes, bytes], set[tuple[bytes]]] = {}
-    w_bp_map: dict[tuple[bytes], set[tuple[bytes, bytes]]] = {}
+    w_bp_map: dict[tuple[bytes], list[tuple[bytes, bytes]]] = {}
     for w, count in w_counter.items():
         for i in range(len(w) - 1):
             bp = (w[i], w[i+1])
@@ -210,8 +204,8 @@ def init_bp_count(w_counter: dict[tuple[bytes], int]
             bp_w.add(w)
             bp_w_map[bp] = bp_w
 
-            w_bp = w_bp_map.get(w, set())
-            w_bp.add(bp)
+            w_bp = w_bp_map.get(w, [])
+            w_bp.append(bp)
             w_bp_map[w] = w_bp
 
     return bp_counter, bp_w_map, w_bp_map
@@ -234,7 +228,7 @@ def train_bpe(input_path: str | os.PathLike,
     w_counter = init_w_counter(input_path, special_tokens)
     bp_counter, bp_w_map, w_bp_map = init_bp_count(w_counter)
     while len(vocab) < vocab_size:
-        bp_to_merge, _ = find_max_bp(w_counter)
+        bp_to_merge, _ = find_max_bp(bp_counter)
         if bp_to_merge is None:
             break
         w_counter, bp_counter, bp_w_map, w_bp_map = merge(
