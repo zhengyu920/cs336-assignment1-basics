@@ -17,6 +17,20 @@ def pretokenize(input_text: str, special_tokens: list[str]) -> list[str]:
             result.append(match.group())
     return result
 
+def pretokenize_into_counter(input_text: str, special_tokens: list[str]):
+    splits = []
+    if len(special_tokens) == 0:
+        splits = [input_text]
+    else:
+        split_pattern = '|'.join([re.escape(st) for st in special_tokens])
+        splits = re.split(split_pattern, input_text)
+    counter = {}
+    for split in splits:
+        for match in re.finditer(PAT, split):
+            token = match.group()
+            counter[token] = counter.get(token, 0) + 1
+    return counter
+
 
 if __name__ == '__main__':
     st = ['<|endoftext|>', '<eos>']

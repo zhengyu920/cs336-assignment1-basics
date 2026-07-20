@@ -103,7 +103,7 @@ during pre-tokenization and the following two facts:
 
 Deliverable: A one-to-two sentence response.
 
-It took 36GB memory and 53 seconds on my desktop.
+It took less than 12GB memory and 53 seconds on my desktop.
 
 Longest token:  b' accomplishment'
 Length:  15

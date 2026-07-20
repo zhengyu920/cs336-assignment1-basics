@@ -1,6 +1,6 @@
 import os
 from typing import BinaryIO
-from pretokenization import pretokenize
+from pretokenization import pretokenize_into_counter
 from multiprocessing import Pool
 
 
@@ -66,11 +66,7 @@ def process_chunk(input_path: str | os.PathLike,
     with open(input_path, "rb") as f:
         f.seek(start_pos)
         chunk = f.read(end_pos - start_pos).decode("utf-8", errors="ignore")
-        pretoken = pretokenize(chunk, special_tokens)
-        counter = {}
-        for token in pretoken:
-            counter[token] = counter.get(token, 0) + 1
-        return counter
+        return pretokenize_into_counter(chunk, special_tokens)
 
 
 def init_w_counter(input_path: str | os.PathLike,
