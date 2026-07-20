@@ -73,10 +73,10 @@ def process_chunk(input_path: str | os.PathLike,
         return counter
 
 
-def init_counter(input_path: str | os.PathLike,
-                 special_tokens: list[str],
-                 num_processes: int = 4
-                 ) -> dict[tuple[bytes], int]:
+def init_w_counter(input_path: str | os.PathLike,
+                   special_tokens: list[str],
+                   num_processes: int = 4
+                   ) -> dict[tuple[bytes], int]:
     with open(input_path, "rb") as f:
         boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
 
@@ -97,23 +97,10 @@ def init_counter(input_path: str | os.PathLike,
     return bytes_counter
 
 
-def find_max_bp(counter: dict[tuple[bytes], int]
-                ) -> tuple[tuple[bytes, bytes] | None, int, list[tuple[bytes]]]:
-    bp_counter = {}
-    bp_w_map = {}
-    for w, count in counter.items():
-        for i in range(len(w) - 1):
-            bp = (w[i], w[i+1])
-            bp_counter[bp] = bp_counter.get(bp, 0) + count
-            bp_w = bp_w_map.get(bp, set())
-            bp_w.add(w)
-            bp_w_map[bp] = bp_w
-
+def find_max_bp(bp_counter
+                ) -> tuple[tuple[bytes, bytes] | None, int]:
     if len(bp_counter) == 0:
-        return None, 0, []
-
-    # print("W Counter Size:", len(counter))
-    # print("BP Counter Size:", len(bp_counter))
+        return None, 0
 
     bp_max = None
     bp_max_count = 0
@@ -124,7 +111,7 @@ def find_max_bp(counter: dict[tuple[bytes], int]
         elif count == bp_max_count and bp > bp_max:
             bp_max = bp
             bp_max_count = count
-    return bp_max, bp_max_count, bp_w_map[bp_max]
+    return bp_max, bp_max_count
 
 
 def try_merge_bp(w: tuple[bytes],
@@ -147,30 +134,87 @@ def try_merge_bp(w: tuple[bytes],
     return tuple(new_w)
 
 
-def merge(w_counts: dict,
+def try_find_merge_bp_idx(w: tuple[bytes],
+                          bp_to_merge: tuple[bytes, bytes]
+                          ) -> list[int]:
+    if (len(w) < 2):
+        return []
+
+    merged_bp = bp_to_merge[0] + bp_to_merge[1]
+
+    idx = []
+    i = 0
+    while i < len(w):
+        if i < len(w) - 1 and w[i] + w[i+1] == merged_bp:
+            idx.append(i)
+            i += 2
+        else:
+            i += 1
+    return idx
+
+
+def merge(w_counter: dict,
+          bp_counter: dict,
+          bp_w_map: dict,
+          w_bp_map: dict,
           bp_to_merge: tuple[bytes, bytes],
-          bp_w: list[tuple[bytes]]
-          ) -> dict[tuple[bytes], int]:
-    for w in bp_w:
+          ):
+    w_to_merge = bp_w_map[bp_to_merge]
+
+    for w in w_to_merge:
+        merge_idx = try_find_merge_bp_idx(w, bp_to_merge)
+        for idx in merge_idx:
+            if idx >= 1:
+                if (w[idx-1], w[idx]) in bp_counter:
+                    bp_counter[(w[idx-1], w[idx])] -= w_counter[w]
+                bp_counter[(w[idx-1], w[idx]+w[idx+1])
+                           ] = bp_counter.get((w[idx-1], w[idx]+w[idx+1]), 0) + w_counter[w]
+            if idx < len(w) - 2:
+                if (w[idx+1], w[idx+2]) in bp_counter:
+                    bp_counter[(w[idx+1], w[idx+2])] -= w_counter[w]
+                bp_counter[(w[idx]+w[idx+1], w[idx+2])
+                           ] = bp_counter.get((w[idx]+w[idx+1], w[idx+2]), 0) + w_counter[w]
+
+        w_bp = w_bp_map[w]
+        for bp in w_bp:
+            bp_w_map[bp].pop(w)
+
+    for w in w_to_merge:
         new_w = try_merge_bp(w, bp_to_merge)
-        count = w_counts.pop(w)
-        w_counts[new_w] = count
-    return w_counts
+        count = w_counter.pop(w)
+        w_counter[new_w] = count
+        for i in range(len(new_w) - 1):
+            bp = (new_w[i], new_w[i+1])
+
+            bp_w = bp_w_map.get(bp, set())
+            bp_w.add(new_w)
+            bp_w_map[bp] = bp_w
+
+            w_bp = w_bp_map.get(new_w, set())
+            w_bp.add(bp)
+            w_bp_map[new_w] = w_bp
+    return w_counter, bp_counter, bp_w_map, w_bp_map
 
 
 def init_bp_count(w_counter: dict[tuple[bytes], int]
                   ):
     bp_counter: dict[tuple[bytes, bytes], int] = {}
     bp_w_map: dict[tuple[bytes, bytes], set[tuple[bytes]]] = {}
+    w_bp_map: dict[tuple[bytes], set[tuple[bytes, bytes]]] = {}
     for w, count in w_counter.items():
         for i in range(len(w) - 1):
             bp = (w[i], w[i+1])
             bp_counter[bp] = bp_counter.get(bp, 0) + count
+
             bp_w = bp_w_map.get(bp, set())
             bp_w.add(w)
             bp_w_map[bp] = bp_w
 
-    return bp_counter, bp_w_map
+            w_bp = w_bp_map.get(w, set())
+            w_bp.add(bp)
+            w_bp_map[w] = w_bp
+
+    return bp_counter, bp_w_map, w_bp_map
 
 
 def train_bpe(input_path: str | os.PathLike,
@@ -187,15 +231,16 @@ def train_bpe(input_path: str | os.PathLike,
         vocab[idx] = st.encode('utf-8')
     # print('Initial vocab: \n', vocab)
 
-    w_counter = init_counter(input_path, special_tokens)
-    bp_counter, bp_w_map = init_bp_count(w_counter)
+    w_counter = init_w_counter(input_path, special_tokens)
+    bp_counter, bp_w_map, w_bp_map = init_bp_count(w_counter)
     while len(vocab) < vocab_size:
-        bp, _, bp_w = find_max_bp(w_counter)
-        if bp is None:
+        bp_to_merge, _ = find_max_bp(w_counter)
+        if bp_to_merge is None:
             break
-        w_counter = merge(w_counter, bp, bp_w)
-        vocab[len(vocab)] = bp[0] + bp[1]
-        merges.append(bp)
+        w_counter, bp_counter, bp_w_map, w_bp_map = merge(
+            w_counter, bp_counter, bp_w_map, w_bp_map, bp_to_merge)
+        vocab[len(vocab)] = bp_to_merge[0] + bp_to_merge[1]
+        merges.append(bp_to_merge)
     return (vocab, merges)
 
 
