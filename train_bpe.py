@@ -127,7 +127,9 @@ def find_max_bp(counter: dict[tuple[bytes], int]
     return bp_max, bp_max_count, bp_w_map[bp_max]
 
 
-def try_merge_bp(w: tuple[bytes], bp_to_merge: tuple[bytes, bytes]) -> tuple[bytes]:
+def try_merge_bp(w: tuple[bytes],
+                 bp_to_merge: tuple[bytes, bytes]
+                 ) -> tuple[bytes]:
     if (len(w) < 2):
         return w
 
@@ -156,6 +158,21 @@ def merge(w_counts: dict,
     return w_counts
 
 
+def init_bp_count(w_counter: dict[tuple[bytes], int]
+                  ):
+    bp_counter: dict[tuple[bytes, bytes], int] = {}
+    bp_w_map: dict[tuple[bytes, bytes], set[tuple[bytes]]] = {}
+    for w, count in w_counter.items():
+        for i in range(len(w) - 1):
+            bp = (w[i], w[i+1])
+            bp_counter[bp] = bp_counter.get(bp, 0) + count
+            bp_w = bp_w_map.get(bp, set())
+            bp_w.add(w)
+            bp_w_map[bp] = bp_w
+
+    return bp_counter, bp_w_map
+
+
 def train_bpe(input_path: str | os.PathLike,
               vocab_size: int,
               special_tokens: list[str]
@@ -170,14 +187,13 @@ def train_bpe(input_path: str | os.PathLike,
         vocab[idx] = st.encode('utf-8')
     # print('Initial vocab: \n', vocab)
 
-    counter = init_counter(input_path, special_tokens)
+    w_counter = init_counter(input_path, special_tokens)
+    bp_counter, bp_w_map = init_bp_count(w_counter)
     while len(vocab) < vocab_size:
-        # print('Premerge: \n', counter)
-        bp, _, bp_w = find_max_bp(counter)
+        bp, _, bp_w = find_max_bp(w_counter)
         if bp is None:
             break
-        # print('Bp to merge: ', bp, "Count: ", count)
-        counter = merge(counter, bp, bp_w)
+        w_counter = merge(w_counter, bp, bp_w)
         vocab[len(vocab)] = bp[0] + bp[1]
         merges.append(bp)
     return (vocab, merges)
