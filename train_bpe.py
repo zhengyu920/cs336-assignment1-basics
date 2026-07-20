@@ -134,25 +134,6 @@ def try_merge_bp(w: tuple[bytes],
     return tuple(new_w)
 
 
-def try_find_merge_bp_idx(w: tuple[bytes],
-                          bp_to_merge: tuple[bytes, bytes]
-                          ) -> list[int]:
-    if (len(w) < 2):
-        return []
-
-    merged_bp = bp_to_merge[0] + bp_to_merge[1]
-
-    idx = []
-    i = 0
-    while i < len(w):
-        if i < len(w) - 1 and w[i] + w[i+1] == merged_bp:
-            idx.append(i)
-            i += 2
-        else:
-            i += 1
-    return idx
-
-
 def merge(w_counter: dict,
           bp_counter: dict,
           bp_w_map: dict,
@@ -164,13 +145,16 @@ def merge(w_counter: dict,
     for old_w in w_to_merge:
         new_w = try_merge_bp(old_w, bp_to_merge)
         w_count = w_counter[old_w]
+        # update w_counter
         w_counter[new_w] = w_counter.get(new_w, 0) + w_count
         w_counter.pop(old_w)
+        # update bp_counter and bp_w_map
         # deduct all bp in w from bp_counter and bp_w_map
         for bp in w_bp_map[old_w]:
             if bp != bp_to_merge:
                 bp_counter[bp] -= w_count
                 bp_w_map[bp].discard(old_w)
+        # update w_bp_map
         # revmoe from w_bp_map
         w_bp_map.pop(old_w)
         # add new_w bps
