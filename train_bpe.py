@@ -98,15 +98,22 @@ def init_counter(input_path: str | os.PathLike,
 
 
 def find_max_bp(counter: dict[tuple[bytes], int]
-                ) -> tuple[tuple[bytes, bytes] | None, int]:
+                ) -> tuple[tuple[bytes, bytes] | None, int, list[tuple[bytes]]]:
     bp_counter = {}
+    bp_w_map = {}
     for w, count in counter.items():
         for i in range(len(w) - 1):
             bp = (w[i], w[i+1])
             bp_counter[bp] = bp_counter.get(bp, 0) + count
+            bp_w = bp_w_map.get(bp, set())
+            bp_w.add(w)
+            bp_w_map[bp] = bp_w
 
     if len(bp_counter) == 0:
-        return None, 0
+        return None, 0, []
+
+    # print("W Counter Size:", len(counter))
+    # print("BP Counter Size:", len(bp_counter))
 
     bp_max = None
     bp_max_count = 0
@@ -117,7 +124,7 @@ def find_max_bp(counter: dict[tuple[bytes], int]
         elif count == bp_max_count and bp > bp_max:
             bp_max = bp
             bp_max_count = count
-    return bp_max, bp_max_count
+    return bp_max, bp_max_count, bp_w_map[bp_max]
 
 
 def try_merge_bp(w: tuple[bytes], bp_to_merge: tuple[bytes, bytes]) -> tuple[bytes]:
@@ -138,12 +145,15 @@ def try_merge_bp(w: tuple[bytes], bp_to_merge: tuple[bytes, bytes]) -> tuple[byt
     return tuple(new_w)
 
 
-def merge(w_counts: dict, bp_to_merge: tuple[bytes, bytes]) -> dict[tuple[bytes], int]:
-    result = {}
-    for w, count in w_counts.items():
+def merge(w_counts: dict,
+          bp_to_merge: tuple[bytes, bytes],
+          bp_w: list[tuple[bytes]]
+          ) -> dict[tuple[bytes], int]:
+    for w in bp_w:
         new_w = try_merge_bp(w, bp_to_merge)
-        result[new_w] = result.get(new_w, 0) + count
-    return result
+        count = w_counts.pop(w)
+        w_counts[new_w] = count
+    return w_counts
 
 
 def train_bpe(input_path: str | os.PathLike,
@@ -163,11 +173,11 @@ def train_bpe(input_path: str | os.PathLike,
     counter = init_counter(input_path, special_tokens)
     while len(vocab) < vocab_size:
         # print('Premerge: \n', counter)
-        bp, _ = find_max_bp(counter)
+        bp, _, bp_w = find_max_bp(counter)
         if bp is None:
             break
         # print('Bp to merge: ', bp, "Count: ", count)
-        counter = merge(counter, bp)
+        counter = merge(counter, bp, bp_w)
         vocab[len(vocab)] = bp[0] + bp[1]
         merges.append(bp)
     return (vocab, merges)
@@ -177,4 +187,6 @@ if __name__ == '__main__':
     path = 'data/TinyStoriesV2-GPT4-valid.txt'
     # path = 'data/bpe_example.txt'
     special_tokens = ['<|endoftext|>']
-    train_bpe(path, 259, special_tokens)
+    vocab, merges = train_bpe(path, 500, special_tokens)
+    print("Vocab: \n", vocab)
+    print("Merges: \n", merges)
