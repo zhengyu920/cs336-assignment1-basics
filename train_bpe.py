@@ -97,10 +97,10 @@ def init_counter(input_path: str | os.PathLike,
     return bytes_counter
 
 
-def find_max_bp(w_counts: dict[tuple[bytes], int]
+def find_max_bp(counter: dict[tuple[bytes], int]
                 ) -> tuple[tuple[bytes, bytes] | None, int]:
     bp_counter = {}
-    for w, count in w_counts.items():
+    for w, count in counter.items():
         for i in range(len(w) - 1):
             bp = (w[i], w[i+1])
             bp_counter[bp] = bp_counter.get(bp, 0) + count
