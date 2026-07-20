@@ -4,9 +4,11 @@ import pickle
 MAX_VOCAB_SIZE = 10000
 S_T = ['<|endoftext|>']
 
-FILE_PATH = 'data/TinyStoriesV2-GPT4-valid.txt'
+FILE_PATH = 'data/TinyStoriesV2-GPT4-train.txt'
 
 vocab, merges = train_bpe(FILE_PATH, MAX_VOCAB_SIZE, S_T)
 
-pickle.dump(vocab, 'bpe_ts_vocab.pkl')
-pickle.dump(merges, 'bpe_ts_merges.pkl')
+with open('bpe_ts_vocab.pkl', 'wb') as f:
+    pickle.dump(vocab, f)
+with open('bpe_ts_merges.pkl', 'wb') as f:
+    pickle.dump(merges, f)
