@@ -35,7 +35,7 @@ class Tokenizer:
         """
         Encode an input text into a sequence of token IDs
         """
-        raise("not implemented")
+        raise NotImplementedError("encode not implemented")
     
     def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
         """
@@ -45,10 +45,10 @@ class Tokenizer:
         that we cannot directly load into
         memory.
         """
-        raise("not implemented")
+        raise NotImplementedError("encode_iterable not implemented")
     
     def decode(self, ids: list[int]) -> str:
         """
         Decode a sequence of token IDs into text.
         """
-        raise("not implemented")
+        raise NotImplementedError("decode() not implemented")
