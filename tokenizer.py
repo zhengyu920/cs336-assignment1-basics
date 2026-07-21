@@ -16,6 +16,7 @@ class Tokenizer:
         self.merges = merges
         self.special_tokens = special_tokens
     
+    @classmethod
     def from_files(cls, 
                    vocab_filepath: str, 
                    merges_filepath:str, 
@@ -51,4 +52,4 @@ class Tokenizer:
         """
         Decode a sequence of token IDs into text.
         """
-        return b"".join([self.vocab[id] for id in ids]).decode('utf-8')
+        return b"".join([self.vocab[id] for id in ids]).decode('utf-8' , errors='replace')
