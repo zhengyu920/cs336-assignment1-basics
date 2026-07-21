@@ -1,4 +1,6 @@
 from typing import Iterable, Iterator
+from pretokenization import pretokenize
+import pickle
 
 class Tokenizer:
     """
@@ -10,13 +12,24 @@ class Tokenizer:
                  vocab: dict[int, bytes], 
                  merges: list[tuple[bytes, bytes]], 
                  special_tokens: list[str] | None = None):
-        return
+        self.vocab = vocab
+        self.merges = merges
+        self.special_tokens = special_tokens
     
     def from_files(cls, 
                    vocab_filepath: str, 
                    merges_filepath:str, 
                    special_tokens:list[str] | None = None):
-        raise("not implemented")
+        """
+        Class method that constructs and returns a Tokenizer from a serialized vocabulary
+        and list of merges (in the same format that your BPE training code output) 
+        and (optionally) a list of special tokens.
+        """
+        with open(vocab_filepath, 'rb') as f:
+            vocab = pickle.load(f)
+        with open(merges_filepath, 'rb') as f:
+            merges = pickle.load(f)
+        return cls(vocab, merges, special_tokens)
     
     def encode(self, text: str) -> list[int]:
         """
