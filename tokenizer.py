@@ -51,4 +51,4 @@ class Tokenizer:
         """
         Decode a sequence of token IDs into text.
         """
-        raise NotImplementedError("decode() not implemented")
+        return b"".join([self.vocab[id] for id in ids]).decode('utf-8')
