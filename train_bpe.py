@@ -2,6 +2,7 @@ import os
 from typing import BinaryIO
 from pretokenization import pretokenize_into_counter
 from multiprocessing import Pool
+from tokenizer_utils import bytes_to_tuple
 
 
 def find_chunk_boundaries(
@@ -50,13 +51,6 @@ def find_chunk_boundaries(
 
     # Make sure all boundaries are unique, but might be fewer than desired_num_chunks
     return sorted(set(chunk_boundaries))
-
-
-def bytes_to_tuple(input: bytes) -> tuple[bytes]:
-    result = []
-    for i in range(len(input)):
-        result.append(input[i: i+1])
-    return tuple(result)
 
 
 def process_chunk(input_path: str | os.PathLike,

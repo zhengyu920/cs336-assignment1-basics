@@ -1,7 +1,22 @@
 from typing import Iterable, Iterator
 from pretokenization import pretokenize
+from tokenizer_utils import bytes_to_tuple
 import pickle
 
+
+def merge_bytes(bs: tuple[bytes], merge: tuple[bytes, bytes]) -> tuple[bytes]:
+        if len(bs) < 2:
+            return bs
+        new_bs = []
+        idx = 0
+        while idx < len(bs):
+            if idx < len(bs) - 1 and (bs[idx], bs[idx+1]) == merge:
+                new_bs.append(bs[idx]+bs[idx+1])
+                idx += 2
+            else:
+                new_bs.append(bs[idx])
+                idx += 1
+        return tuple(new_bs)
 class Tokenizer:
     """
     Given a vocabulary and a list of merges, encodes
@@ -15,6 +30,11 @@ class Tokenizer:
         self.vocab = vocab
         self.merges = merges
         self.special_tokens = special_tokens
+        self.vocab_to_int = {}
+        for k, v in vocab.items():
+            if v in self.vocab_to_int:
+                raise ValueError("Duplicated token in vocab")
+            self.vocab_to_int[v] = k
     
     @classmethod
     def from_files(cls, 
@@ -36,7 +56,14 @@ class Tokenizer:
         """
         Encode an input text into a sequence of token IDs
         """
-        raise NotImplementedError("encode not implemented")
+        pretokens = pretokenize(text, self.special_tokens)
+        encoded = []
+        for pretoken in pretokens:
+            bs = bytes_to_tuple(pretoken)
+            for merge in self.merges:
+                bs = merge_bytes(bs, merge)
+            encoded.extend([self.vocab_to_int[b] for b in bs])
+        return encoded
     
     def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
         """
