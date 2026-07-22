@@ -4,13 +4,12 @@ PAT = re.compile(
     r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
 
 
-def pretokenize(input_text: str, special_tokens: list[str] | None = None) -> list[bytes]:
-    if special_tokens is not None:
-        special_tokens.sort(reverse=True)
+def pretokenize(input_text: str, special_tokens: list[str] | None = None) -> list[bytes]:   
     splits = []
     if special_tokens is None or len(special_tokens) == 0:
         splits = [input_text]
     else:
+        special_tokens.sort(reverse=True)
         split_pattern = '(' + '|'.join([re.escape(st) for st in special_tokens]) + ')'
         splits = re.split(split_pattern, input_text)
     result = []
@@ -24,13 +23,12 @@ def pretokenize(input_text: str, special_tokens: list[str] | None = None) -> lis
             result.append(match.group().encode('utf-8'))
     return result
 
-def pretokenize_into_counter(input_text: str, special_tokens: list[str]):
-    if special_tokens is not None:
-        special_tokens.sort(reverse=True)
+def pretokenize_into_counter(input_text: str, special_tokens: list[str] | None = None):        
     splits = []
-    if len(special_tokens) == 0:
+    if special_tokens is None or len(special_tokens) == 0:
         splits = [input_text]
     else:
+        special_tokens.sort(reverse=True)
         split_pattern = '|'.join([re.escape(st) for st in special_tokens])
         splits = re.split(split_pattern, input_text)
     counter = {}
