@@ -117,3 +117,28 @@ The word is indeed long and common so it makes sense.
 Deliverable: A one-to-two sentence response.
 
 It is pretokeninzation. It takes over 50s with 4 workers and my entire training is under 1min.
+
+# Problem (train_bpe_expts_owt):  BPE Training on OpenWebText (2 points)
+
+
+(a) Train a byte-level BPE tokenizer on the OpenWebText dataset, using a maximum vocabulary
+size of 32,000. Serialize the resulting vocabulary and merges to disk for further inspection.
+What is the longest token in the vocabulary? Does it make sense?
+
+Resource requirements: ≤ 12 hours (no GPUs), ≤ 100 GB RAM
+
+Deliverable: A one-to-two sentence response.
+
+Longest token:  ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ
+Length:  64
+
+It doesn't really make sense since ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ doesn't not like a real word.
+
+---
+
+(b) Compare and contrast the tokenizer that you get training on TinyStories versus
+OpenWebText.
+
+Deliverable: A one-to-two sentence response.
+
+A lot of words in TinyStories vocab doesn't exists in OWT vocab, also comparing the longest token only the TinyStories is a real word. That probably means TinyStories has much higher data quality than OWT.
