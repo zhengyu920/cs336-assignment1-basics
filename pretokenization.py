@@ -25,7 +25,8 @@ def pretokenize(input_text: str, special_tokens: list[str] | None = None) -> lis
     return result
 
 def pretokenize_into_counter(input_text: str, special_tokens: list[str]):
-    special_tokens.sort(reverse=True)
+    if special_tokens is not None:
+        special_tokens.sort(reverse=True)
     splits = []
     if len(special_tokens) == 0:
         splits = [input_text]
