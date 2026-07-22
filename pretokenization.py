@@ -9,10 +9,15 @@ def pretokenize(input_text: str, special_tokens: list[str] | None = None) -> lis
     if special_tokens is None or len(special_tokens) == 0:
         splits = [input_text]
     else:
-        split_pattern = '|'.join([re.escape(st) for st in special_tokens])
+        split_pattern = '(' + '|'.join([re.escape(st) for st in special_tokens]) + ')'
         splits = re.split(split_pattern, input_text)
     result = []
+    if special_tokens is not None:
+        special_tokens = set(special_tokens)
     for split in splits:
+        if special_tokens is not None and split in special_tokens:
+            result.append(split.encode('utf-8'))
+            continue
         for match in re.finditer(PAT, split):
             result.append(match.group().encode('utf-8'))
     return result

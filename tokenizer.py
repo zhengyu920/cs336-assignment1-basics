@@ -59,6 +59,9 @@ class Tokenizer:
         pretokens = pretokenize(text, self.special_tokens)
         encoded = []
         for pretoken in pretokens:
+            if pretoken in self.vocab_to_int:
+                encoded.append(self.vocab_to_int[pretoken])
+                continue
             bs = bytes_to_tuple(pretoken)
             for merge in self.merges:
                 bs = merge_bytes(bs, merge)
