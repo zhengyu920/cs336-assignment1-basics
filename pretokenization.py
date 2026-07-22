@@ -5,6 +5,8 @@ PAT = re.compile(
 
 
 def pretokenize(input_text: str, special_tokens: list[str] | None = None) -> list[bytes]:
+    if special_tokens is not None:
+        special_tokens.sort(reverse=True)
     splits = []
     if special_tokens is None or len(special_tokens) == 0:
         splits = [input_text]
@@ -23,6 +25,7 @@ def pretokenize(input_text: str, special_tokens: list[str] | None = None) -> lis
     return result
 
 def pretokenize_into_counter(input_text: str, special_tokens: list[str]):
+    special_tokens.sort(reverse=True)
     splits = []
     if len(special_tokens) == 0:
         splits = [input_text]
@@ -43,3 +46,5 @@ if __name__ == '__main__':
     print(pretokenize("<eos><eos>", st))
     print(pretokenize("", st))
     print(pretokenize("some text that i'll pre-tokenize<|endoftext|>", []))
+    overlap_st = ['<eos>', '<eos><eos>']
+    print(pretokenize("<eos><eos>", overlap_st))
