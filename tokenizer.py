@@ -76,7 +76,10 @@ class Tokenizer:
         that we cannot directly load into
         memory.
         """
-        raise NotImplementedError("encode_iterable not implemented")
+        for text in iterable:
+            encoded = self.encode(text)
+            for token in encoded:
+                yield token
     
     def decode(self, ids: list[int]) -> str:
         """
