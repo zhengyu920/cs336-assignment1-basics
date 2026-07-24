@@ -17,6 +17,8 @@ def merge_bytes(bs: tuple[bytes], merge: tuple[bytes, bytes]) -> tuple[bytes]:
                 new_bs.append(bs[idx])
                 idx += 1
         return tuple(new_bs)
+
+
 class Tokenizer:
     """
     Given a vocabulary and a list of merges, encodes

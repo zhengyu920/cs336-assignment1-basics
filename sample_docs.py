@@ -4,7 +4,7 @@ import io
 from typing import BinaryIO
 
 
-def sample_doc(
+def find_sample_doc_pos(
     file: BinaryIO,
     split_special_token: bytes,
 ) -> tuple[int, int]:
@@ -68,18 +68,20 @@ def sample_doc(
     # in case inital rand seek land in the middle of special token.
     # there will be a spcial token in the middle of the final chunk.
     file.seek(start_pos)
-    chunk = fake_file.read(end_pos - start_pos)
+    chunk = file.read(end_pos - start_pos)
     found_at = chunk.find(split_special_token)
     if found_at != -1:
         end_pos = start_pos + found_at
 
     return (start_pos, end_pos)
 
+def sample_doc(file: BinaryIO,
+    split_special_token: bytes) -> str:
+    start_pos, end_pos = find_sample_doc_pos(file, split_special_token)
+    file.seek(start_pos)
+    return file.read(end_pos - start_pos).decode("utf-8", errors="ignore")
 
 if __name__ == '__main__' :
     fake_file = io.BytesIO(b"doc1<|endoftext|>doc2<|endoftext|>doc3")
     st = b"<|endoftext|>"
-    start_pos, end_pos = sample_doc(fake_file, st)
-    fake_file.seek(start_pos)
-    chunk = fake_file.read(end_pos - start_pos).decode("utf-8", errors="ignore")
-    print(chunk)
+    print(sample_doc(fake_file, st))
