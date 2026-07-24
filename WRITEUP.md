@@ -164,7 +164,7 @@ Compare the compression ratio and/or qualitatively describe what happens.
 
 Deliverable: A one-to-two sentence response.
 
-compression ratio drops to ~3.2 from ~4.0 after a couple runs.
+compression ratio drops to ~3.2 from ~4.4 with owt tokenizer after a couple runs.
 
 ts tokenizer is train only on ts dataset so when it applies to owt dataset, it might a lot new words which will translate into single bytes.
 
