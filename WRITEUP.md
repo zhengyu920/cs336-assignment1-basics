@@ -155,18 +155,24 @@ Deliverable: A one-to-two sentence response.
 
 Run the 10 sample experiment 10 times:
 tinystories compression ratio is about 4.0;
-OpenWebText compression ratio is about 4.4
+OpenWebText compression ratio is about 4.4;
 
 ---
 
 (b) What happens if you tokenize your OpenWebText sample with the TinyStories tokenizer?
 Compare the compression ratio and/or qualitatively describe what happens.
+
 Deliverable: A one-to-two sentence response.
+
+compression ratio drops to ~3.2 from ~4.0 after a couple runs.
+
+ts tokenizer is train only on ts dataset so when it applies to owt dataset, it might a lot new words which will translate into single bytes.
 
 ---
 
 (c) Estimate the throughput of your tokenizer (e.g., in bytes/second). How long would it take to
 tokenize the Pile dataset (825GB of text)?
+
 Deliverable: A one-to-two sentence response.
 
 ---
