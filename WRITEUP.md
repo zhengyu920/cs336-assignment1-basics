@@ -189,8 +189,10 @@ ts_perf/owt_perf: 2.1902884401321727
 ---
 
 (d) Using your TinyStories and OpenWebText tokenizers, encode the respective training and
-development datasets into a sequence of integer token IDs. We’ll use this later to train our language model. We recommend serializing the token IDs as a NumPy array of datatype
-uint16. Why is uint16 an appropriate choice?
+development datasets into a sequence of integer token IDs. We’ll use this later to train our language model. We recommend serializing the token IDs as a NumPy array of datatype `uint16`. Why is uint16 an appropriate choice?
+
 Deliverable: A one-to-two sentence response.
+
+the data is id (non-negative number) that cap at size of vocab. owt vocab size is 32k which is less that the uint16 can represent.
 
 
