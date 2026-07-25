@@ -18,7 +18,6 @@ def merge_bytes(bs: tuple[bytes], merge: tuple[bytes, bytes]) -> tuple[bytes]:
                 idx += 1
         return tuple(new_bs)
 
-
 class Tokenizer:
     """
     Given a vocabulary and a list of merges, encodes
@@ -31,12 +30,16 @@ class Tokenizer:
                  special_tokens: list[str] | None = None):
         self.vocab = vocab
         self.merges = merges
+        self.merges_size = len(merges)
         self.special_tokens = special_tokens
         self.vocab_to_int = {}
+        self.merges_to_int = {}
         for k, v in vocab.items():
             if v in self.vocab_to_int:
                 raise ValueError("Duplicated token in vocab")
             self.vocab_to_int[v] = k
+        for i in range(len(merges)):
+            self.merges_to_int[merges[i]] = i
     
     @classmethod
     def from_files(cls, 
@@ -53,6 +56,17 @@ class Tokenizer:
         with open(merges_filepath, 'rb') as f:
             merges = pickle.load(f)
         return cls(vocab, merges, special_tokens)
+
+    def find_merge(self, bt: tuple[bytes])-> int:
+        idx = self.merges_size
+        if len(bt) < 2:
+            return idx
+        for i in range(len(bt)-1):
+            bp = (bt[i], bt[i+1])
+            if bp in self.merges_to_int and self.merges_to_int[bp] < idx:
+                idx = self.merges_to_int[bp]
+        return idx
+
     
     def encode(self, text: str) -> list[int]:
         """
@@ -64,10 +78,12 @@ class Tokenizer:
             if pretoken in self.vocab_to_int:
                 encoded.append(self.vocab_to_int[pretoken])
                 continue
-            bs = bytes_to_tuple(pretoken)
-            for merge in self.merges:
-                bs = merge_bytes(bs, merge)
-            encoded.extend([self.vocab_to_int[b] for b in bs])
+            bt = bytes_to_tuple(pretoken)
+            merge_idx = self.find_merge(bt)
+            while merge_idx != self.merges_size:
+                bt = merge_bytes(bt, self.merges[merge_idx])
+                merge_idx = self.find_merge(bt)
+            encoded.extend([self.vocab_to_int[b] for b in bt])
         return encoded
     
     def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
