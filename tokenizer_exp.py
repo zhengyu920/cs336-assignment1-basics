@@ -75,7 +75,7 @@ def encoding_perf(tokenizer: Tokenizer, samples: list[str]) -> tuple[int, float]
 # ==== question c ===== 
 print('===== OWT =====')
 with open(OWT_FILE_PATH, 'rb') as f:
-    owt_samples = [sample_doc(f, ST.encode('utf-8')) for _ in range(10)]
+    owt_samples = [sample_doc(f, ST.encode('utf-8')) for _ in range(100)]
 total_bytes_owt, time_owt = encoding_perf(owt_tokenizer, owt_samples)
 owt_perf = total_bytes_owt/time_owt
 print(f'OWT perf: {total_bytes_owt} bytes over {time_owt} seconds')
@@ -83,7 +83,7 @@ print(f"OWT perf: {owt_perf} bytes/s")
 print(f"825GB time: {timedelta(seconds=825*1024**3/owt_perf)}")
 print('===== TS =====')
 with open(TS_FILE_PATH, 'rb') as f:
-    ts_samples = [sample_doc(f, ST.encode('utf-8')) for _ in range(200)]
+    ts_samples = [sample_doc(f, ST.encode('utf-8')) for _ in range(2000)]
 total_bytes_ts, time_ts = encoding_perf(ts_tokenizer, ts_samples)
 ts_perf = total_bytes_ts/time_ts
 print(f'OWT perf: {total_bytes_ts} bytes over {time_ts} seconds')

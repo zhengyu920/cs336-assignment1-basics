@@ -175,6 +175,17 @@ tokenize the Pile dataset (825GB of text)?
 
 Deliverable: A one-to-two sentence response.
 
+===== OWT =====
+OWT perf: 111290 bytes over 0.020580137000251852 seconds
+OWT perf: 5407641.358200777 bytes/s
+825GB time: 1 day, 21:30:12.084812
+===== TS =====
+OWT perf: 192959 bytes over 0.01629130399942369 seconds
+TS perf: 11844294.355247805 bytes/s
+825GB time: 20:46:30.188274
+===== Comparision =====
+ts_perf/owt_perf: 2.1902884401321727
+
 ---
 
 (d) Using your TinyStories and OpenWebText tokenizers, encode the respective training and
