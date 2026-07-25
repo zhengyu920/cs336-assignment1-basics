@@ -2,6 +2,8 @@ from sample_docs import sample_doc
 from tokenizer import Tokenizer
 import pickle
 import statistics as stats
+import time
+from datetime import timedelta
 
 with open('bpe_ts_vocab.pkl', 'rb') as f:
     vocab_ts = pickle.load(f)
@@ -28,6 +30,14 @@ def compression_ratio(tokenizer: Tokenizer, samples: list[str]) -> float:
     total_bytes = sum([len(doc.encode('utf-8')) for doc in samples])
     total_tokens = sum([len(tokenizer.encode(doc)) for doc in samples])
     return total_bytes/total_tokens
+
+def encoding_perf(tokenizer: Tokenizer, samples: list[str]) -> tuple[int, float]:
+    total_bytes = sum([len(doc.encode('utf-8')) for doc in samples])
+    start = time.perf_counter()
+    for doc in samples:
+        tokenizer.encode(doc)
+    elapsed = time.perf_counter() - start
+    return (total_bytes,elapsed)
 
 # ==== question a =====
 
@@ -57,6 +67,25 @@ def compression_ratio(tokenizer: Tokenizer, samples: list[str]) -> float:
 
 # ==== question b ====== 
 
+# with open(OWT_FILE_PATH, 'rb') as f:
+#     owt_samples = [sample_doc(f, ST.encode('utf-8')) for _ in range(10)]
+# print(compression_ratio(ts_tokenizer, owt_samples))
+
+
+# ==== question c ===== 
+
 with open(OWT_FILE_PATH, 'rb') as f:
     owt_samples = [sample_doc(f, ST.encode('utf-8')) for _ in range(10)]
-print(compression_ratio(ts_tokenizer, owt_samples))
+total_bytes_owt, time_owt = encoding_perf(owt_tokenizer, owt_samples)
+owt_perf = total_bytes_owt/time_owt
+print(f'OWT perf: {total_bytes_owt} bytes over {time_owt} seconds')
+print(f"OWT perf: {owt_perf} bytes/s")
+print(f"825GB time: {timedelta(seconds=825*1024**3/owt_perf)}")
+
+with open(TS_FILE_PATH, 'rb') as f:
+    ts_samples = [sample_doc(f, ST.encode('utf-8')) for _ in range(200)]
+total_bytes_ts, time_ts = encoding_perf(ts_tokenizer, ts_samples)
+ts_perf = total_bytes_ts/time_ts
+print(f'OWT perf: {total_bytes_ts} bytes over {time_ts} seconds')
+print(f"TS perf: {ts_perf} bytes/s")
+print(f"825GB time: {timedelta(seconds=825*1024**3/ts_perf)}")
